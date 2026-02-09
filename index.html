@@ -3,12 +3,154 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hello World</title>
+  <title>My Digital HQ</title>
   <link href='/style.css' rel='stylesheet'>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <h1>Hello, world!</h1>
-  <button onclick="console.log('hello');">Press me</button>
-  <script defer type="text/javascript" src="/main.js"></script>
+  <div class="container">
+    <aside class="sidebar">
+      <div class="logo">
+        <a href="#" data-section="dashboard">My Digital HQ</a>
+      </div>
+      <nav class="sidebar-nav">
+        <ul>
+          <li><a href="#" data-section="dashboard" class="active"><span>🏠</span>Dashboard</a></li>
+          <li><a href="#" data-section="work"><span>💼</span>Work (EWP)</a></li>
+          <li><a href="#" data-section="venture"><span>💡</span>Venture</a></li>
+          <li><a href="#" data-section="academy"><span>🎓</span>Academy</a></li>
+          <li><a href="#" data-section="finance"><span>💹</span>Finance</a></li>
+          <li><a href="#" data-section="lab"><span>🔬</span>Lab (Tech)</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <main class="content">
+      <header class="header">
+        <h1 id="main-title">Dashboard</h1>
+        <div class="user-profile">
+          <span>Welcome Back!</span>
+        </div>
+      </header>
+
+      <section id="dashboard" class="content-section active">
+        <div class="widgets-grid">
+          <div class="widget-card">
+            <div class="card-icon">✅</div>
+            <div class="card-content">
+              <h3>Today's To-Do</h3>
+              <p>Task 1, Task 2, Task 3...</p>
+            </div>
+            <div class="card-footer"><span>3 items</span></div>
+          </div>
+          <div class="widget-card">
+            <div class="card-icon">⚡️</div>
+            <div class="card-content">
+              <h3>발전량/SMP 요약</h3>
+              <p>PV: 1.2MWh / SMP: 150원</p>
+            </div>
+            <div class="card-footer"><span>Updated 5m ago</span></div>
+          </div>
+          <div class="widget-card">
+            <div class="card-icon">📈</div>
+            <div class="card-content">
+              <h3>포트폴리오 수익률</h3>
+              <p>+1.25% this week</p>
+            </div>
+            <div class="card-footer"><span>vs S&P500</span></div>
+          </div>
+          <div class="widget-card">
+            <div class="card-icon">🗓️</div>
+            <div class="card-content">
+              <h3>UNIST 과제 D-Day</h3>
+              <p>D-5 for Project Alpha</p>
+            </div>
+            <div class="card-footer"><span>AI Grad School</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="work" class="content-section">
+        <div class="widgets-grid">
+            <div class="widget-card large">
+                <h3>규제 준수(Compliance) 체크리스트</h3>
+                <ul>
+                    <li>Item 1: Completed</li>
+                    <li>Item 2: In Progress</li>
+                    <li>Item 3: Pending</li>
+                </ul>
+            </div>
+            <div class="widget-card large">
+                <h3>설비 현황(VFB ESS, PV) 모니터링</h3>
+                <div class="chart-placeholder">Chart will go here</div>
+            </div>
+        </div>
+      </section>
+      
+      <section id="venture" class="content-section">
+        <div class="widgets-grid">
+            <div class="widget-card large">
+                <h3>아이디어 메모장</h3>
+                <div class="memo-placeholder">Markdown style memo area</div>
+            </div>
+            <div class="widget-card large">
+                <h3>진단 이미지 갤러리 그리드</h3>
+                <div class="gallery-grid-placeholder">Image gallery will go here</div>
+            </div>
+        </div>
+      </section>
+      
+      <section id="academy" class="content-section">
+        <div class="widgets-grid">
+            <div class="widget-card">
+                <h3>이번 학기 커리큘럼</h3>
+                <ul>
+                    <li>Course A: Advanced AI</li>
+                    <li>Course B: Quantum Computing</li>
+                </ul>
+            </div>
+            <div class="widget-card">
+                <h3>논문 PDF 업로드</h3>
+                <div class="upload-placeholder">PDF Upload field</div>
+            </div>
+        </div>
+      </section>
+
+      <section id="finance" class="content-section">
+        <div class="widgets-grid">
+            <div class="widget-card">
+                <h3>자산 배분</h3>
+                <div class="chart-placeholder">Chart.js Pie Chart</div>
+            </div>
+            <div class="widget-card large">
+                <h3>관심 종목 시세</h3>
+                <table>
+                    <thead>
+                        <tr><th>Ticker</th><th>Name</th><th>Price</th><th>Change</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>AAPL</td><td>Apple Inc.</td><td>$170.12</td><td class="positive">+1.2%</td></tr>
+                        <tr><td>GOOGL</td><td>Alphabet Inc.</td><td>$150.45</td><td class="positive">+0.8%</td></tr>
+                        <tr><td>TSLA</td><td>Tesla, Inc.</td><td>$180.50</td><td class="negative">-2.1%</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+      </section>
+
+      <section id="lab" class="content-section">
+        <div class="widgets-grid">
+            <div class="widget-card">
+                <h3>라즈베리파이 시스템 상태</h3>
+                <div class="gauge-placeholder">CPU/RAM Gauge Bar</div>
+            </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+  <script defer type="text/javascript" src="/script.js"></script>
 </body>
 </html>
