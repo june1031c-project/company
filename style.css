@@ -456,6 +456,141 @@ body.readonly .todo-table td:nth-child(6) {
     display: none;
 }
 
+/* Portfolio Widget Styles */
+.portfolio-widget {
+    grid-column: 1 / -1;
+}
+
+.portfolio-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.portfolio-header h3 {
+    margin: 0;
+    font-size: 20px;
+    color: #333;
+}
+
+.portfolio-header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.portfolio-rate-info {
+    font-size: 13px;
+    color: #666;
+}
+
+.portfolio-refresh-btn {
+    padding: 6px 14px;
+    background-color: #1976D2;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.portfolio-refresh-btn:hover {
+    background-color: #1565C0;
+}
+
+.portfolio-form {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.portfolio-form input {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 14px;
+}
+
+.portfolio-form input[type="text"] {
+    width: 140px;
+}
+
+.portfolio-form input[type="number"] {
+    width: 140px;
+}
+
+.portfolio-table-wrap {
+    overflow-x: auto;
+}
+
+.portfolio-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    white-space: nowrap;
+}
+
+.portfolio-table th,
+.portfolio-table td {
+    padding: 10px;
+    border: 1px solid #eee;
+    text-align: right;
+}
+
+.portfolio-table th {
+    background-color: #f8f8f8;
+    font-weight: 600;
+    text-align: center;
+}
+
+.portfolio-table td:nth-child(1),
+.portfolio-table td:nth-child(2) {
+    text-align: center;
+}
+
+.portfolio-table td:last-child {
+    text-align: center;
+}
+
+.portfolio-table tfoot td {
+    font-weight: 700;
+    background-color: #f8f8f8;
+}
+
+.portfolio-delete-btn {
+    padding: 4px 12px;
+    background-color: #dc3545;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background-color 0.2s ease;
+}
+
+.portfolio-delete-btn:hover {
+    background-color: #c82333;
+}
+
+body.readonly .portfolio-form {
+    display: none;
+}
+
+body.readonly .portfolio-delete-btn {
+    display: none;
+}
+
+body.readonly .portfolio-table th:last-child,
+body.readonly .portfolio-table td:last-child {
+    display: none;
+}
+
 /* Content section visibility */
 .content-section {
     display: none; /* Hide all content sections by default */

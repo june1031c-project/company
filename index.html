@@ -175,22 +175,44 @@
 
       <section id="finance" class="content-section">
         <div class="widgets-grid">
+            <div class="widget-card portfolio-widget">
+                <div class="portfolio-header">
+                    <h3>💹 포트폴리오</h3>
+                    <div class="portfolio-header-right">
+                        <span id="portfolio-rate-info" class="portfolio-rate-info"></span>
+                        <button class="portfolio-refresh-btn" onclick="refreshPortfolio()">🔄 시세 업데이트</button>
+                    </div>
+                </div>
+                <div class="portfolio-form">
+                    <input type="text" id="portfolio-ticker" placeholder="티커 (예: AAPL)" />
+                    <input type="number" id="portfolio-buy-price" placeholder="매수가 (원)" />
+                    <input type="number" id="portfolio-quantity" placeholder="수량" step="0.01" />
+                    <button class="todo-add-btn" onclick="addPortfolio()">추가</button>
+                </div>
+                <div class="portfolio-table-wrap">
+                    <table class="portfolio-table">
+                        <thead>
+                            <tr>
+                                <th>순번</th>
+                                <th>종목</th>
+                                <th>현재가($)</th>
+                                <th>환율(₩/$)</th>
+                                <th>매수가(₩)</th>
+                                <th>수량</th>
+                                <th>평가금(₩)</th>
+                                <th>수익금(₩)</th>
+                                <th>수익률</th>
+                                <th>삭제</th>
+                            </tr>
+                        </thead>
+                        <tbody id="portfolio-tbody"></tbody>
+                        <tfoot id="portfolio-tfoot"></tfoot>
+                    </table>
+                </div>
+            </div>
             <div class="widget-card">
                 <h3>자산 배분</h3>
                 <div class="chart-placeholder">Chart.js Pie Chart</div>
-            </div>
-            <div class="widget-card large">
-                <h3>관심 종목 시세</h3>
-                <table>
-                    <thead>
-                        <tr><th>Ticker</th><th>Name</th><th>Price</th><th>Change</th></tr>
-                    </thead>
-                    <tbody>
-                        <tr><td>AAPL</td><td>Apple Inc.</td><td>$170.12</td><td class="positive">+1.2%</td></tr>
-                        <tr><td>GOOGL</td><td>Alphabet Inc.</td><td>$150.45</td><td class="positive">+0.8%</td></tr>
-                        <tr><td>TSLA</td><td>Tesla, Inc.</td><td>$180.50</td><td class="negative">-2.1%</td></tr>
-                    </tbody>
-                </table>
             </div>
         </div>
       </section>

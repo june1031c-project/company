@@ -101,6 +101,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // To-Do functionality
   loadTodos();
+
+  // Portfolio
+  renderPortfolio();
 });
 
 var todoSortKey = 'endDate';
@@ -206,5 +209,166 @@ function toggleComplete(index) {
 
 function loadTodos() {
   renderTodos();
+}
+
+// ========== Portfolio ==========
+var EODHD_API_KEY = '6975d9cad29f05.79877483';
+
+function getPortfolio() {
+  var data = localStorage.getItem('portfolio');
+  return data ? JSON.parse(data) : [];
+}
+
+function savePortfolio(items) {
+  localStorage.setItem('portfolio', JSON.stringify(items));
+}
+
+function formatKRW(num) {
+  return Math.round(num).toLocaleString('ko-KR');
+}
+
+function renderPortfolio() {
+  var tbody = document.getElementById('portfolio-tbody');
+  var tfoot = document.getElementById('portfolio-tfoot');
+  var items = getPortfolio();
+  tbody.innerHTML = '';
+  tfoot.innerHTML = '';
+
+  var totalCost = 0;
+  var totalValue = 0;
+
+  items.forEach(function(item, index) {
+    var currentVal = (item.currentPrice || 0) * (item.exchangeRate || 0) * item.quantity;
+    var costVal = item.buyPrice * item.quantity;
+    var profit = currentVal - costVal;
+    var profitRate = costVal > 0 ? (profit / costVal) * 100 : 0;
+
+    totalCost += costVal;
+    totalValue += currentVal;
+
+    var profitClass = profit >= 0 ? 'positive' : 'negative';
+    var profitSign = profit >= 0 ? '+' : '';
+
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td>' + (index + 1) + '</td>' +
+      '<td>' + escapeHtml(item.ticker) + '</td>' +
+      '<td>' + (item.currentPrice ? '$' + item.currentPrice.toFixed(2) : '-') + '</td>' +
+      '<td>' + (item.exchangeRate ? formatKRW(item.exchangeRate) : '-') + '</td>' +
+      '<td>' + formatKRW(item.buyPrice) + '</td>' +
+      '<td>' + item.quantity + '</td>' +
+      '<td>' + (item.currentPrice ? formatKRW(currentVal) : '-') + '</td>' +
+      '<td class="' + profitClass + '">' + (item.currentPrice ? profitSign + formatKRW(profit) : '-') + '</td>' +
+      '<td class="' + profitClass + '">' + (item.currentPrice ? profitSign + profitRate.toFixed(2) + '%' : '-') + '</td>' +
+      '<td><button class="portfolio-delete-btn" onclick="deletePortfolio(' + index + ')">삭제</button></td>';
+    tbody.appendChild(tr);
+  });
+
+  if (items.length > 0 && totalCost > 0) {
+    var totalProfit = totalValue - totalCost;
+    var totalRate = (totalProfit / totalCost) * 100;
+    var cls = totalProfit >= 0 ? 'positive' : 'negative';
+    var sign = totalProfit >= 0 ? '+' : '';
+
+    var tfootTr = document.createElement('tr');
+    tfootTr.innerHTML =
+      '<td colspan="6" style="text-align:center;">합계</td>' +
+      '<td>' + (totalValue > 0 ? formatKRW(totalValue) : '-') + '</td>' +
+      '<td class="' + cls + '">' + (totalValue > 0 ? sign + formatKRW(totalProfit) : '-') + '</td>' +
+      '<td class="' + cls + '">' + (totalValue > 0 ? sign + totalRate.toFixed(2) + '%' : '-') + '</td>' +
+      '<td></td>';
+    tfoot.appendChild(tfootTr);
+  }
+}
+
+function addPortfolio() {
+  var ticker = document.getElementById('portfolio-ticker').value.trim().toUpperCase();
+  var buyPrice = parseFloat(document.getElementById('portfolio-buy-price').value);
+  var quantity = parseFloat(document.getElementById('portfolio-quantity').value);
+
+  if (!ticker) { alert('티커를 입력해주세요.'); return; }
+  if (!buyPrice || buyPrice <= 0) { alert('매수가를 입력해주세요.'); return; }
+  if (!quantity || quantity <= 0) { alert('수량을 입력해주세요.'); return; }
+
+  var items = getPortfolio();
+  items.push({
+    ticker: ticker,
+    buyPrice: buyPrice,
+    quantity: Math.round(quantity * 100) / 100,
+    currentPrice: null,
+    exchangeRate: null
+  });
+  savePortfolio(items);
+  renderPortfolio();
+
+  document.getElementById('portfolio-ticker').value = '';
+  document.getElementById('portfolio-buy-price').value = '';
+  document.getElementById('portfolio-quantity').value = '';
+}
+
+function deletePortfolio(index) {
+  var items = getPortfolio();
+  items.splice(index, 1);
+  savePortfolio(items);
+  renderPortfolio();
+}
+
+function refreshPortfolio() {
+  var items = getPortfolio();
+  if (items.length === 0) { alert('종목을 먼저 추가해주세요.'); return; }
+
+  var btn = document.querySelector('.portfolio-refresh-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ 불러오는 중...';
+
+  var rateUrl = 'https://eodhd.com/api/real-time/USDKRW.FOREX?api_token=' + EODHD_API_KEY + '&fmt=json';
+
+  fetch(rateUrl)
+    .then(function(res) { return res.json(); })
+    .then(function(rateData) {
+      var exchangeRate = rateData.close || rateData.previousClose || 0;
+
+      var tickers = [];
+      items.forEach(function(item) {
+        if (tickers.indexOf(item.ticker) === -1) tickers.push(item.ticker);
+      });
+
+      var fetches = tickers.map(function(ticker) {
+        var url = 'https://eodhd.com/api/real-time/' + ticker + '.US?api_token=' + EODHD_API_KEY + '&fmt=json';
+        return fetch(url).then(function(res) { return res.json(); });
+      });
+
+      return Promise.all(fetches).then(function(results) {
+        var priceMap = {};
+        results.forEach(function(data, i) {
+          priceMap[tickers[i]] = data.close || data.previousClose || 0;
+        });
+
+        items.forEach(function(item) {
+          item.currentPrice = priceMap[item.ticker] || 0;
+          item.exchangeRate = exchangeRate;
+        });
+
+        savePortfolio(items);
+        renderPortfolio();
+
+        var infoEl = document.getElementById('portfolio-rate-info');
+        var now = new Date();
+        var timeStr = now.getFullYear() + '-' +
+          String(now.getMonth() + 1).padStart(2, '0') + '-' +
+          String(now.getDate()).padStart(2, '0') + ' ' +
+          String(now.getHours()).padStart(2, '0') + ':' +
+          String(now.getMinutes()).padStart(2, '0');
+        infoEl.textContent = '환율: ' + formatKRW(exchangeRate) + '원/$  |  ' + timeStr + ' 업데이트';
+
+        btn.disabled = false;
+        btn.textContent = '🔄 시세 업데이트';
+      });
+    })
+    .catch(function(err) {
+      alert('시세 조회 실패: ' + err.message);
+      btn.disabled = false;
+      btn.textContent = '🔄 시세 업데이트';
+    });
 }
 
