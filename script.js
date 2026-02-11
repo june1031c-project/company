@@ -477,7 +477,7 @@ function refreshPortfolio() {
   var ratePromise;
   if (hasUS) {
     var apiUrl = 'https://eodhd.com/api/real-time/USDKRW.FOREX?api_token=' + EODHD_API_KEY + '&fmt=json';
-    var rateUrl = 'proxy.php?url=' + encodeURIComponent(apiUrl);
+    var rateUrl = '/proxy?url=' + encodeURIComponent(apiUrl);
     ratePromise = fetch(rateUrl).then(function(res) { return res.json(); });
   } else {
     ratePromise = Promise.resolve(null);
@@ -502,7 +502,7 @@ function refreshPortfolio() {
       var priceFetches = tickerList.map(function(t) {
         var suffix = t.market === 'KR' ? '.KO' : '.US';
         var apiUrl = 'https://eodhd.com/api/real-time/' + t.ticker + suffix + '?api_token=' + EODHD_API_KEY + '&fmt=json';
-        var url = 'proxy.php?url=' + encodeURIComponent(apiUrl);
+        var url = '/proxy?url=' + encodeURIComponent(apiUrl);
         return fetch(url).then(function(res) { return res.json(); });
       });
 
@@ -515,7 +515,7 @@ function refreshPortfolio() {
       });
       var nameFetches = needName.map(function(t) {
         var apiUrl = 'https://eodhd.com/api/search/' + t.ticker + '?api_token=' + EODHD_API_KEY + '&fmt=json';
-        var url = 'proxy.php?url=' + encodeURIComponent(apiUrl);
+        var url = '/proxy?url=' + encodeURIComponent(apiUrl);
         return fetch(url).then(function(res) { return res.json(); });
       });
 
