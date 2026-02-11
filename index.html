@@ -10,7 +10,20 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="container">
+  <div id="login-screen" class="login-screen">
+    <div class="login-card">
+      <h2>My Digital HQ</h2>
+      <p class="login-subtitle">로그인하여 시작하세요</p>
+      <form id="login-form" onsubmit="return handleLogin(event)">
+        <input type="text" id="login-id" placeholder="아이디" required />
+        <input type="password" id="login-pw" placeholder="비밀번호" required />
+        <button type="submit" class="login-btn">로그인</button>
+        <p id="login-error" class="login-error"></p>
+      </form>
+    </div>
+  </div>
+
+  <div class="container" id="app-container" style="display:none;">
     <aside class="sidebar">
       <div class="logo">
         <a href="#" data-section="dashboard">My Digital HQ</a>
@@ -31,7 +44,8 @@
       <header class="header">
         <h1 id="main-title">Dashboard</h1>
         <div class="user-profile">
-          <span>Welcome Back!</span>
+          <span id="user-role-label"></span>
+          <button class="logout-btn" onclick="handleLogout()">로그아웃</button>
         </div>
       </header>
 

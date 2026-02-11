@@ -1,4 +1,62 @@
+// Login credentials
+const USERS = {
+  'june1031c': { password: 'jun1031c', role: 'admin', label: 'Admin' },
+  'ewp': { password: 'ewp', role: 'user', label: 'User' }
+};
+
+function handleLogin(event) {
+  event.preventDefault();
+  const id = document.getElementById('login-id').value.trim();
+  const pw = document.getElementById('login-pw').value;
+  const errorEl = document.getElementById('login-error');
+
+  const user = USERS[id];
+  if (user && user.password === pw) {
+    sessionStorage.setItem('loginRole', user.role);
+    sessionStorage.setItem('loginUser', id);
+    errorEl.textContent = '';
+    initApp();
+  } else {
+    errorEl.textContent = '아이디 또는 비밀번호가 올바르지 않습니다.';
+  }
+  return false;
+}
+
+function handleLogout() {
+  sessionStorage.removeItem('loginRole');
+  sessionStorage.removeItem('loginUser');
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app-container').style.display = 'none';
+  document.body.classList.remove('readonly');
+  document.getElementById('login-id').value = '';
+  document.getElementById('login-pw').value = '';
+}
+
+function initApp() {
+  const role = sessionStorage.getItem('loginRole');
+  if (!role) return;
+
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-container').style.display = 'flex';
+
+  const userId = sessionStorage.getItem('loginUser');
+  const user = USERS[userId];
+  document.getElementById('user-role-label').textContent =
+    (user ? user.label : role) + ' Mode';
+
+  if (role === 'user') {
+    document.body.classList.add('readonly');
+  } else {
+    document.body.classList.remove('readonly');
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  // Check existing session
+  if (sessionStorage.getItem('loginRole')) {
+    initApp();
+  }
+
   const sidebarLinks = document.querySelectorAll('.sidebar-nav a');
   const contentSections = document.querySelectorAll('.content-section');
   const mainTitle = document.getElementById('main-title');
