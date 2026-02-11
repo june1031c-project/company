@@ -214,6 +214,24 @@ function loadTodos() {
 // ========== Portfolio ==========
 var EODHD_API_KEY = '6975d9cad29f05.79877483';
 var portfolioEditIndex = -1;
+var portfolioSortKey = 'category';
+var portfolioSortAsc = true;
+
+var portfolioSortLabels = {
+  category: '구분', market: '시장', ticker: 'Ticker', name: '종목명',
+  currentPrice: '현재가', buyPrice: '매수가(₩)', quantity: '수량',
+  evalValue: '평가금(₩)', profit: '수익금(₩)', profitRate: '수익률'
+};
+
+function sortPortfolio(key) {
+  if (portfolioSortKey === key) {
+    portfolioSortAsc = !portfolioSortAsc;
+  } else {
+    portfolioSortKey = key;
+    portfolioSortAsc = true;
+  }
+  renderPortfolio();
+}
 
 function getPortfolio() {
   var data = localStorage.getItem('portfolio');
@@ -228,6 +246,17 @@ function formatKRW(num) {
   return Math.round(num).toLocaleString('ko-KR');
 }
 
+function calcPortfolioItem(item) {
+  var isUS = item.market === 'US';
+  var currentVal = isUS
+    ? (item.currentPrice || 0) * (item.exchangeRate || 0) * item.quantity
+    : (item.currentPrice || 0) * item.quantity;
+  var costVal = item.buyPrice * item.quantity;
+  var profit = currentVal - costVal;
+  var profitRate = costVal > 0 ? (profit / costVal) * 100 : 0;
+  return { evalValue: currentVal, costVal: costVal, profit: profit, profitRate: profitRate };
+}
+
 function renderPortfolio() {
   var tbody = document.getElementById('portfolio-tbody');
   var tfoot = document.getElementById('portfolio-tfoot');
@@ -235,21 +264,61 @@ function renderPortfolio() {
   tbody.innerHTML = '';
   tfoot.innerHTML = '';
 
+  // Build sorted indexed list
+  var sorted = items.map(function(item, i) {
+    var calc = calcPortfolioItem(item);
+    return { item: item, origIndex: i, evalValue: calc.evalValue, profit: calc.profit, profitRate: calc.profitRate };
+  });
+
+  sorted.sort(function(a, b) {
+    var va, vb;
+    var key = portfolioSortKey;
+    if (key === 'evalValue' || key === 'profit' || key === 'profitRate') {
+      va = a[key]; vb = b[key];
+    } else if (key === 'currentPrice' || key === 'buyPrice' || key === 'quantity') {
+      va = a.item[key] || 0; vb = b.item[key] || 0;
+    } else {
+      va = (a.item[key] || '').toString().toLowerCase();
+      vb = (b.item[key] || '').toString().toLowerCase();
+    }
+    var result;
+    if (typeof va === 'string') {
+      result = va.localeCompare(vb);
+    } else {
+      result = va - vb;
+    }
+    return portfolioSortAsc ? result : -result;
+  });
+
+  // Update header indicators
+  var headerCells = document.querySelectorAll('.portfolio-table thead .sortable-th');
+  headerCells.forEach(function(th) {
+    var onclick = th.getAttribute('onclick');
+    var match = onclick.match(/sortPortfolio\('(\w+)'\)/);
+    if (match) {
+      var colKey = match[1];
+      var label = portfolioSortLabels[colKey] || colKey;
+      if (colKey === portfolioSortKey) {
+        th.textContent = label + (portfolioSortAsc ? ' ▲' : ' ▼');
+      } else {
+        th.textContent = label;
+      }
+    }
+  });
+
   var totalCost = 0;
   var totalValue = 0;
 
-  items.forEach(function(item, index) {
-    var isUS = item.market === 'US';
-    var currentVal;
-    if (isUS) {
-      currentVal = (item.currentPrice || 0) * (item.exchangeRate || 0) * item.quantity;
-    } else {
-      currentVal = (item.currentPrice || 0) * item.quantity;
-    }
-    var costVal = item.buyPrice * item.quantity;
-    var profit = currentVal - costVal;
-    var profitRate = costVal > 0 ? (profit / costVal) * 100 : 0;
+  sorted.forEach(function(entry, displayIndex) {
+    var item = entry.item;
+    var origIndex = entry.origIndex;
+    var calc = calcPortfolioItem(item);
+    var currentVal = calc.evalValue;
+    var costVal = calc.costVal;
+    var profit = calc.profit;
+    var profitRate = calc.profitRate;
     var hasPrice = item.currentPrice != null && item.currentPrice > 0;
+    var isUS = item.market === 'US';
 
     totalCost += costVal;
     if (hasPrice) totalValue += currentVal;
@@ -265,7 +334,7 @@ function renderPortfolio() {
 
     var tr = document.createElement('tr');
     tr.innerHTML =
-      '<td>' + (index + 1) + '</td>' +
+      '<td>' + (displayIndex + 1) + '</td>' +
       '<td>' + escapeHtml(item.category || '-') + '</td>' +
       '<td>' + (item.market || 'US') + '</td>' +
       '<td>' + escapeHtml(item.ticker) + '</td>' +
@@ -277,8 +346,8 @@ function renderPortfolio() {
       '<td>' + (hasPrice ? formatKRW(currentVal) : '-') + '</td>' +
       '<td class="' + profitClass + '">' + (hasPrice ? profitSign + formatKRW(profit) : '-') + '</td>' +
       '<td class="' + profitClass + '">' + (hasPrice ? profitSign + profitRate.toFixed(2) + '%' : '-') + '</td>' +
-      '<td><button class="portfolio-edit-btn" onclick="editPortfolio(' + index + ')">수정</button></td>' +
-      '<td><button class="portfolio-delete-btn" onclick="deletePortfolio(' + index + ')">삭제</button></td>';
+      '<td><button class="portfolio-edit-btn" onclick="editPortfolio(' + origIndex + ')">수정</button></td>' +
+      '<td><button class="portfolio-delete-btn" onclick="deletePortfolio(' + origIndex + ')">삭제</button></td>';
     tbody.appendChild(tr);
   });
 

@@ -200,17 +200,17 @@
                         <thead>
                             <tr>
                                 <th>순번</th>
-                                <th>구분</th>
-                                <th>시장</th>
-                                <th>Ticker</th>
-                                <th>종목명</th>
-                                <th>현재가</th>
+                                <th class="sortable-th" onclick="sortPortfolio('category')">구분 ▲</th>
+                                <th class="sortable-th" onclick="sortPortfolio('market')">시장</th>
+                                <th class="sortable-th" onclick="sortPortfolio('ticker')">Ticker</th>
+                                <th class="sortable-th" onclick="sortPortfolio('name')">종목명</th>
+                                <th class="sortable-th" onclick="sortPortfolio('currentPrice')">현재가</th>
                                 <th>환율(₩/$)</th>
-                                <th>매수가(₩)</th>
-                                <th>수량</th>
-                                <th>평가금(₩)</th>
-                                <th>수익금(₩)</th>
-                                <th>수익률</th>
+                                <th class="sortable-th" onclick="sortPortfolio('buyPrice')">매수가(₩)</th>
+                                <th class="sortable-th" onclick="sortPortfolio('quantity')">수량</th>
+                                <th class="sortable-th" onclick="sortPortfolio('evalValue')">평가금(₩)</th>
+                                <th class="sortable-th" onclick="sortPortfolio('profit')">수익금(₩)</th>
+                                <th class="sortable-th" onclick="sortPortfolio('profitRate')">수익률</th>
                                 <th>수정</th>
                                 <th>삭제</th>
                             </tr>
