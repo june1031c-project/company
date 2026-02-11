@@ -253,6 +253,7 @@ function renderPortfolio() {
     var tr = document.createElement('tr');
     tr.innerHTML =
       '<td>' + (index + 1) + '</td>' +
+      '<td>' + escapeHtml(item.category || '-') + '</td>' +
       '<td>' + escapeHtml(item.ticker) + '</td>' +
       '<td>' + (item.currentPrice ? '$' + item.currentPrice.toFixed(2) : '-') + '</td>' +
       '<td>' + (item.exchangeRate ? formatKRW(item.exchangeRate) : '-') + '</td>' +
@@ -274,7 +275,7 @@ function renderPortfolio() {
 
     var tfootTr = document.createElement('tr');
     tfootTr.innerHTML =
-      '<td colspan="6" style="text-align:center;">합계</td>' +
+      '<td colspan="7" style="text-align:center;">합계</td>' +
       '<td>' + (totalValue > 0 ? formatKRW(totalValue) : '-') + '</td>' +
       '<td class="' + cls + '">' + (totalValue > 0 ? sign + formatKRW(totalProfit) : '-') + '</td>' +
       '<td class="' + cls + '">' + (totalValue > 0 ? sign + totalRate.toFixed(2) + '%' : '-') + '</td>' +
@@ -284,6 +285,7 @@ function renderPortfolio() {
 }
 
 function addPortfolio() {
+  var category = document.getElementById('portfolio-category').value.trim();
   var ticker = document.getElementById('portfolio-ticker').value.trim().toUpperCase();
   var buyPrice = parseFloat(document.getElementById('portfolio-buy-price').value);
   var quantity = parseFloat(document.getElementById('portfolio-quantity').value);
@@ -295,7 +297,7 @@ function addPortfolio() {
   var items = getPortfolio();
 
   if (portfolioEditIndex >= 0) {
-    // Edit mode: update existing item, keep fetched prices
+    items[portfolioEditIndex].category = category || '-';
     items[portfolioEditIndex].ticker = ticker;
     items[portfolioEditIndex].buyPrice = buyPrice;
     items[portfolioEditIndex].quantity = Math.round(quantity * 100) / 100;
@@ -305,6 +307,7 @@ function addPortfolio() {
     if (cancelBtn) cancelBtn.remove();
   } else {
     items.push({
+      category: category || '-',
       ticker: ticker,
       buyPrice: buyPrice,
       quantity: Math.round(quantity * 100) / 100,
@@ -316,6 +319,7 @@ function addPortfolio() {
   savePortfolio(items);
   renderPortfolio();
 
+  document.getElementById('portfolio-category').value = '';
   document.getElementById('portfolio-ticker').value = '';
   document.getElementById('portfolio-buy-price').value = '';
   document.getElementById('portfolio-quantity').value = '';
@@ -326,6 +330,7 @@ function editPortfolio(index) {
   var item = items[index];
   portfolioEditIndex = index;
 
+  document.getElementById('portfolio-category').value = item.category || '';
   document.getElementById('portfolio-ticker').value = item.ticker;
   document.getElementById('portfolio-buy-price').value = item.buyPrice;
   document.getElementById('portfolio-quantity').value = item.quantity;
@@ -346,6 +351,7 @@ function editPortfolio(index) {
 
 function cancelEditPortfolio() {
   portfolioEditIndex = -1;
+  document.getElementById('portfolio-category').value = '';
   document.getElementById('portfolio-ticker').value = '';
   document.getElementById('portfolio-buy-price').value = '';
   document.getElementById('portfolio-quantity').value = '';
