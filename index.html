@@ -32,7 +32,7 @@
         <ul>
           <li><a href="#" data-section="dashboard" class="active"><span>🏠</span>Dashboard</a></li>
           <li><a href="#" data-section="work"><span>💼</span>Company</a></li>
-          <li><a href="#" data-section="venture"><span>💡</span>Venture</a></li>
+          <li><a href="#" data-section="venture"><span>💡</span>Venture</li>
           <li><a href="#" data-section="academy"><span>🎓</span>Academy</a></li>
           <li><a href="#" data-section="finance"><span>💹</span>Finance</a></li>
           <li><a href="#" data-section="lab"><span>🔬</span>Tech</a></li>
@@ -121,8 +121,8 @@
                     <li><a href="https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EA%B5%AD%ED%86%A0%EC%9D%98%EA%B3%84%ED%9A%8D%EB%B0%8F%EC%9D%B4%EC%9A%A9%EC%97%90%EA%B4%80%ED%95%9C%EB%B2%95%EB%A5%A0%EC%8B%9C%ED%96%89%EB%A0%B9" target="_blank">국토계획법 시행령</a></li>
                     <li><a href="https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EA%B5%AD%ED%86%A0%EC%9D%98%EA%B3%84%ED%9A%8D%EB%B0%8F%EC%9D%B4%EC%9A%A9%EC%97%90%EA%B4%80%ED%95%9C%EB%B2%95%EB%A5%A0%EC%8B%9C%ED%96%89%EA%B7%9C%EC%B9%99" target="_blank">국토계획법 시행규칙</a></li>
                     <li><a href="https://law.go.kr/%eb%b2%95%eb%a0%b9/%ea%b5%ad%ea%b0%80%ea%b3%84%ec%95%bd%eb%b2%95" target="_blank">국가계약법</a></li>
-                    <li><a href="https://law.go.kr/%eb%b2%95%eb%a0%b9/%ea%b5%ad%ea%b0%80%ea%b3%84%ec%95%bd%eb%b2%95%EC%8B%9C%ED%96%89%EB%A0%B9" target="_blank">국가계약법 시행령</a></li>
-                    <li><a href="https://law.go.kr/%eb%b2%95%eb%a0%b9/%ea%b5%ad%ea%b0%80%ea%b3%84%ec%95%bd%eb%b2%95%EC%8B%9C%ED%96%89%EA%B7%9C%EC%B9%99" target="_blank">국가계약법 시행규칙</a></li>
+                    <li><a href="https://law.go.kr/%eb%b2%95%eb%a0%b9/%ea%b5%ad%ea%b0%80%ea%b3%84%ec%95%bd%eb%b2%95%EC%8B%9C%ed%96%89%eb%a0%b9" target="_blank">국가계약법 시행령</a></li>
+                    <li><a href="https://law.go.kr/%eb%b2%95%eb%a0%b9/%ea%b5%ad%ea%b0%80%ea%b3%84%ec%95%bd%eb%b2%95%EC%8B%9C%ed%96%89%EA%B7%9C%EC%B9%99" target="_blank">국가계약법 시행규칙</a></li>
                     <li><a href="https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EC%A0%84%EB%A0%A5%EA%B8%B0%EC%88%A0%EA%B4%80%EB%A6%AC%EB%B2%95" target="_blank">전력기술관리법</a></li>
                     <li><a href="https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EC%A0%84%EB%A0%A5%EA%B8%B0%EC%88%A0%EA%B4%80%EB%A6%AC%EB%B2%95%EC%8B%9C%ED%96%89%EB%A0%B9" target="_blank">전력기술관리법 시행령</a></li>
                     <li><a href="https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EC%A0%84%EB%A0%A5%EA%B8%B0%EC%88%A0%EA%B4%80%EB%A6%AC%EB%B2%95%EC%8B%9C%ED%96%89%EA%B7%9C%EC%B9%99" target="_blank">전력기술관리법 시행규칙</a></li>
@@ -209,7 +209,7 @@
                                 <th class="sortable-th" onclick="sortPortfolio('name')">종목명</th>
                                 <th class="sortable-th" onclick="sortPortfolio('currentPrice')">현재가</th>
                                 <th>환율(₩/$)</th>
-                                <th class="sortable-th" onclick="sortPortfolio('buyPrice')">매수가(₩)</th>
+                                <th class="sortable-th" onclick="sortPortfolio('buy-price')">매수가(₩)</th>
                                 <th class="sortable-th" onclick="sortPortfolio('quantity')">수량</th>
                                 <th class="sortable-th" onclick="sortPortfolio('evalValue')">평가금(₩)</th>
                                 <th class="sortable-th" onclick="sortPortfolio('profit')">수익금(₩)</th>
@@ -223,6 +223,31 @@
                     </table>
                 </div>
 
+                <div class="cash-deposit-section">
+                    <h3>현금성 자산 (예수금)</h3>
+                    <div class="cash-deposit-form">
+                        <input type="text" id="cash-deposit-category" placeholder="증권사/구분 (예: 토스증권)" />
+                        <input type="number" id="cash-deposit-amount" placeholder="금액" />
+                        <select id="cash-deposit-currency">
+                            <option value="KRW">KRW (원)</option>
+                            <option value="USD">USD (달러)</option>
+                        </select>
+                        <button class="cash-deposit-add-btn" onclick="addCashDeposit()">추가</button>
+                    </div>
+                    <table class="cash-deposit-table">
+                        <thead>
+                            <tr>
+                                <th>구분</th>
+                                <th>금액</th>
+                                <th>통화</th>
+                                <th>수정</th>
+                                <th>삭제</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cash-deposit-tbody"></tbody>
+                        <tfoot id="cash-deposit-tfoot"></tfoot>
+                    </table>
+                </div>
                 <div class="cash-deposit-section">
                     <h3>현금성 자산 (예수금)</h3>
                     <div class="cash-deposit-form">
