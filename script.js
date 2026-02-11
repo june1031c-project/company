@@ -40,5 +40,87 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Show the dashboard section by default on load
   showSection('dashboard');
+
+  // To-Do functionality
+  loadTodos();
 });
+
+function getTodos() {
+  const data = localStorage.getItem('todos');
+  return data ? JSON.parse(data) : [];
+}
+
+function saveTodos(todos) {
+  localStorage.setItem('todos', JSON.stringify(todos));
+}
+
+function renderTodos() {
+  const tbody = document.getElementById('todo-tbody');
+  const todos = getTodos();
+  tbody.innerHTML = '';
+  todos.forEach((todo, index) => {
+    const tr = document.createElement('tr');
+    if (todo.completed) {
+      tr.classList.add('completed');
+    }
+    tr.innerHTML =
+      '<td>' + (index + 1) + '</td>' +
+      '<td>' + todo.startDate + '</td>' +
+      '<td>' + todo.endDate + '</td>' +
+      '<td>' + escapeHtml(todo.detail) + '</td>' +
+      '<td><input type="checkbox" ' + (todo.completed ? 'checked' : '') + ' onchange="toggleComplete(' + index + ')" /></td>' +
+      '<td><button class="todo-delete-btn" onclick="deleteTodo(' + index + ')">삭제</button></td>';
+    tbody.appendChild(tr);
+  });
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function addTodo() {
+  const startDate = document.getElementById('todo-start-date').value;
+  const endDate = document.getElementById('todo-end-date').value;
+  const detail = document.getElementById('todo-detail').value.trim();
+
+  if (!detail) {
+    alert('세부내용을 입력해주세요.');
+    return;
+  }
+
+  const todos = getTodos();
+  todos.push({
+    startDate: startDate || '-',
+    endDate: endDate || '-',
+    detail: detail,
+    completed: false
+  });
+  saveTodos(todos);
+  renderTodos();
+
+  // Clear inputs
+  document.getElementById('todo-start-date').value = '';
+  document.getElementById('todo-end-date').value = '';
+  document.getElementById('todo-detail').value = '';
+}
+
+function deleteTodo(index) {
+  const todos = getTodos();
+  todos.splice(index, 1);
+  saveTodos(todos);
+  renderTodos();
+}
+
+function toggleComplete(index) {
+  const todos = getTodos();
+  todos[index].completed = !todos[index].completed;
+  saveTodos(todos);
+  renderTodos();
+}
+
+function loadTodos() {
+  renderTodos();
+}
 

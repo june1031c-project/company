@@ -237,6 +237,98 @@ td.negative {
     margin-top: 15px;
 }
 
+/* To-Do Widget Styles */
+.todo-widget h3 {
+    margin-top: 0;
+    font-size: 20px;
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.todo-form {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.todo-form input[type="date"],
+.todo-form input[type="text"] {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 14px;
+}
+
+.todo-form input[type="text"] {
+    flex: 1;
+    min-width: 150px;
+}
+
+.todo-add-btn {
+    padding: 8px 20px;
+    background-color: #4CAF50;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.todo-add-btn:hover {
+    background-color: #388E3C;
+}
+
+.todo-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.todo-table th,
+.todo-table td {
+    padding: 10px;
+    border: 1px solid #eee;
+    text-align: center;
+}
+
+.todo-table th {
+    background-color: #f8f8f8;
+    font-weight: 600;
+}
+
+.todo-table td:nth-child(4) {
+    text-align: left;
+}
+
+.todo-table tr.completed td {
+    color: #999;
+    text-decoration: line-through;
+}
+
+.todo-table tr.completed td:nth-child(5),
+.todo-table tr.completed td:nth-child(6) {
+    text-decoration: none;
+}
+
+.todo-delete-btn {
+    padding: 4px 12px;
+    background-color: #dc3545;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background-color 0.2s ease;
+}
+
+.todo-delete-btn:hover {
+    background-color: #c82333;
+}
+
 /* Content section visibility */
 .content-section {
     display: none; /* Hide all content sections by default */

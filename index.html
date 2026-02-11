@@ -37,13 +37,27 @@
 
       <section id="dashboard" class="content-section active">
         <div class="widgets-grid">
-          <div class="widget-card">
-            <div class="card-icon">✅</div>
-            <div class="card-content">
-              <h3>Today's To-Do</h3>
-              <p>Task 1, Task 2, Task 3...</p>
+          <div class="widget-card large todo-widget">
+            <h3>✅ Today's To-Do</h3>
+            <div class="todo-form">
+              <input type="date" id="todo-start-date" title="시작일자" />
+              <input type="date" id="todo-end-date" title="완료일자" />
+              <input type="text" id="todo-detail" placeholder="세부내용 입력" />
+              <button class="todo-add-btn" onclick="addTodo()">추가</button>
             </div>
-            <div class="card-footer"><span>3 items</span></div>
+            <table class="todo-table">
+              <thead>
+                <tr>
+                  <th>순번</th>
+                  <th>시작일자</th>
+                  <th>완료일자</th>
+                  <th>세부내용</th>
+                  <th>종료</th>
+                  <th>삭제</th>
+                </tr>
+              </thead>
+              <tbody id="todo-tbody"></tbody>
+            </table>
           </div>
           <div class="widget-card">
             <div class="card-icon">⚡️</div>
