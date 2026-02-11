@@ -1,21 +1,3 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
-
-// Your web app's Firebase configuration
-const firebaseConfig = {
-    apiKey: "AIzaSyCpqpFe0FwnExJmEZSQJKUwWk1RdbO8CPI",
-    authDomain: "company-f4ef5.firebaseapp.com",
-    projectId: "company-f4ef5",
-    storageBucket: "company-f4ef5.firebasestorage.app",
-    messagingSenderId: "679888260857",
-    appId: "1:679888260857:web:2f742ead45d54d5dd7dc28",
-    measurementId: "G-VJ2XC1YZD7"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
 // Login credentials
 const USERS = {
   'june1031c': { password: 'june1031c', role: 'admin', label: 'Admin' },
@@ -70,6 +52,7 @@ function initApp() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Check existing session
   if (sessionStorage.getItem('loginRole')) {
     initApp();
   }
@@ -79,6 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const mainTitle = document.getElementById('main-title');
 
   function showSection(sectionId) {
+    // Deactivate all sections and links
     contentSections.forEach(section => {
       section.classList.remove('active');
     });
@@ -86,6 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
       link.classList.remove('active');
     });
 
+    // Activate the selected section and link
     const activeSection = document.getElementById(sectionId);
     if (activeSection) {
       activeSection.classList.add('active');
@@ -93,13 +78,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const activeLink = document.querySelector(`.sidebar-nav a[data-section="${sectionId}"]`);
     if (activeLink) {
       activeLink.classList.add('active');
+      // Update the main title
       mainTitle.textContent = activeLink.textContent.replace(activeLink.querySelector('span').textContent, '').trim();
     }
   }
 
+  // Add event listeners to sidebar links
   sidebarLinks.forEach(link => {
     link.addEventListener('click', (event) => {
-      event.preventDefault();
+      event.preventDefault(); // Prevent default anchor behavior
+      // Find the link element even if the click is on a child (like the span)
       const targetLink = event.target.closest('a');
       if(targetLink) {
           const sectionId = targetLink.dataset.section;
@@ -108,13 +96,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Show the dashboard section by default on load
   showSection('dashboard');
-  setupTodosRealtimeListener();
-  setupPortfolioRealtimeListener();
+
+  // To-Do functionality
+  loadTodos();
+
+  // Portfolio
+  renderPortfolio();
 });
 
-let todoItems = [];
 var todoSortKey = 'endDate';
+
+function getTodos() {
+  const data = localStorage.getItem('todos');
+  return data ? JSON.parse(data) : [];
+}
+
+function saveTodos(todos) {
+  localStorage.setItem('todos', JSON.stringify(todos));
+}
 
 function sortTodos(field) {
   todoSortKey = field;
@@ -123,7 +124,10 @@ function sortTodos(field) {
 
 function renderTodos() {
   const tbody = document.getElementById('todo-tbody');
-  var sorted = todoItems.map(function(todo) { return { todo: todo }; });
+  const todos = getTodos();
+
+  // Build indexed list to keep original index for delete/toggle
+  var sorted = todos.map(function(todo, i) { return { todo: todo, origIndex: i }; });
   sorted.sort(function(a, b) {
     var va = a.todo[todoSortKey] || '';
     var vb = b.todo[todoSortKey] || '';
@@ -132,6 +136,7 @@ function renderTodos() {
     return va.localeCompare(vb);
   });
 
+  // Update header indicators
   var thStart = document.getElementById('th-start-date');
   var thEnd = document.getElementById('th-end-date');
   thStart.textContent = '시작일자' + (todoSortKey === 'startDate' ? ' ▼' : '');
@@ -140,6 +145,7 @@ function renderTodos() {
   tbody.innerHTML = '';
   sorted.forEach(function(item, displayIndex) {
     var todo = item.todo;
+    var origIndex = item.origIndex;
     var tr = document.createElement('tr');
     if (todo.completed) {
       tr.classList.add('completed');
@@ -149,8 +155,8 @@ function renderTodos() {
       '<td>' + todo.startDate + '</td>' +
       '<td>' + todo.endDate + '</td>' +
       '<td>' + escapeHtml(todo.detail) + '</td>' +
-      '<td><input type="checkbox" ' + (todo.completed ? 'checked' : '') + ' onchange="toggleComplete(\'' + todo.id + '\')" /></td>' +
-      '<td><button class="todo-delete-btn" onclick="deleteTodo(\'' + todo.id + '\')">삭제</button></td>';
+      '<td><input type="checkbox" ' + (todo.completed ? 'checked' : '') + ' onchange="toggleComplete(' + origIndex + ')" /></td>' +
+      '<td><button class="todo-delete-btn" onclick="deleteTodo(' + origIndex + ')">삭제</button></td>';
     tbody.appendChild(tr);
   });
 }
@@ -161,7 +167,7 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-async function addTodo() {
+function addTodo() {
   const startDate = document.getElementById('todo-start-date').value;
   const endDate = document.getElementById('todo-end-date').value;
   const detail = document.getElementById('todo-detail').value.trim();
@@ -171,64 +177,41 @@ async function addTodo() {
     return;
   }
 
-  try {
-    await addDoc(collection(db, "todos"), {
-      startDate: startDate || '-',
-      endDate: endDate || '-',
-      detail: detail,
-      completed: false,
-      createdAt: new Date().toISOString()
-    });
-    document.getElementById('todo-start-date').value = '';
-    document.getElementById('todo-end-date').value = '';
-    document.getElementById('todo-detail').value = '';
-  } catch (e) {
-    console.error("Error adding document: ", e);
-    alert("할 일 추가에 실패했습니다.");
-  }
-}
-
-async function deleteTodo(id) {
-  try {
-    await deleteDoc(doc(db, "todos", id));
-  } catch (e) {
-    console.error("Error deleting document: ", e);
-    alert("할 일 삭제에 실패했습니다.");
-  }
-}
-
-async function toggleComplete(id) {
-  try {
-    const todoRef = doc(db, "todos", id);
-    const todo = todoItems.find(item => item.id === id);
-    if (todo) {
-      await updateDoc(todoRef, {
-        completed: !todo.completed
-      });
-    }
-  } catch (e) {
-    console.error("Error updating document: ", e);
-    alert("할 일 상태 변경에 실패했습니다.");
-  }
-}
-
-function setupTodosRealtimeListener() {
-  const q = query(collection(db, "todos"), orderBy("createdAt"));
-  onSnapshot(q, (snapshot) => {
-    todoItems = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-    renderTodos();
-  }, (error) => {
-    console.error("Error fetching todos: ", error);
-    alert("할 일 목록을 불러오는 데 실패했습니다.");
+  const todos = getTodos();
+  todos.push({
+    startDate: startDate || '-',
+    endDate: endDate || '-',
+    detail: detail,
+    completed: false
   });
+  saveTodos(todos);
+  renderTodos();
+
+  // Clear inputs
+  document.getElementById('todo-start-date').value = '';
+  document.getElementById('todo-end-date').value = '';
+  document.getElementById('todo-detail').value = '';
 }
 
+function deleteTodo(index) {
+  const todos = getTodos();
+  todos.splice(index, 1);
+  saveTodos(todos);
+  renderTodos();
+}
+
+function toggleComplete(index) {
+  const todos = getTodos();
+  todos[index].completed = !todos[index].completed;
+  saveTodos(todos);
+  renderTodos();
+}
+
+function loadTodos() {
+  renderTodos();
+}
 
 // ========== Portfolio ==========
-let portfolioItems = [];
 var EODHD_API_KEY = '6975d9cad29f05.79877483';
 var portfolioEditIndex = -1;
 var portfolioSortKey = 'category';
@@ -250,18 +233,13 @@ function sortPortfolio(key) {
   renderPortfolio();
 }
 
-function setupPortfolioRealtimeListener() {
-  const q = query(collection(db, "portfolios"), orderBy("createdAt", "desc"));
-  onSnapshot(q, (snapshot) => {
-    portfolioItems = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-    renderPortfolio();
-  }, (error) => {
-    console.error("Error fetching portfolio: ", error);
-    alert("포트폴리오를 불러오는 데 실패했습니다.");
-  });
+function getPortfolio() {
+  var data = localStorage.getItem('portfolio');
+  return data ? JSON.parse(data) : [];
+}
+
+function savePortfolio(items) {
+  localStorage.setItem('portfolio', JSON.stringify(items));
 }
 
 function formatKRW(num) {
@@ -282,14 +260,14 @@ function calcPortfolioItem(item) {
 function renderPortfolio() {
   var tbody = document.getElementById('portfolio-tbody');
   var tfoot = document.getElementById('portfolio-tfoot');
-  var items = [...portfolioItems];
-
+  var items = getPortfolio();
   tbody.innerHTML = '';
   tfoot.innerHTML = '';
 
-  var sorted = items.map(function(item) {
+  // Build sorted indexed list
+  var sorted = items.map(function(item, i) {
     var calc = calcPortfolioItem(item);
-    return { item: item, evalValue: calc.evalValue, profit: calc.profit, profitRate: calc.profitRate };
+    return { item: item, origIndex: i, evalValue: calc.evalValue, profit: calc.profit, profitRate: calc.profitRate };
   });
 
   sorted.sort(function(a, b) {
@@ -312,23 +290,28 @@ function renderPortfolio() {
     return portfolioSortAsc ? result : -result;
   });
 
-  var headerCells = document.querySelectorAll('.portfolio-table tr th.sortable-th');
+  // Update header indicators
+  var headerCells = document.querySelectorAll('.portfolio-table thead .sortable-th');
   headerCells.forEach(function(th) {
-    var colKey = th.dataset.sortKey;
-    var label = portfolioSortLabels[colKey] || colKey;
-    if (colKey === portfolioSortKey) {
-      th.textContent = label + (portfolioSortAsc ? ' ▲' : ' ▼');
-    } else {
-      th.textContent = label;
+    var onclick = th.getAttribute('onclick');
+    var match = onclick.match(/sortPortfolio\('(\w+)'\)/);
+    if (match) {
+      var colKey = match[1];
+      var label = portfolioSortLabels[colKey] || colKey;
+      if (colKey === portfolioSortKey) {
+        th.textContent = label + (portfolioSortAsc ? ' ▲' : ' ▼');
+      } else {
+        th.textContent = label;
+      }
     }
   });
-
 
   var totalCost = 0;
   var totalValue = 0;
 
   sorted.forEach(function(entry, displayIndex) {
     var item = entry.item;
+    var origIndex = entry.origIndex;
     var calc = calcPortfolioItem(item);
     var currentVal = calc.evalValue;
     var costVal = calc.costVal;
@@ -363,8 +346,8 @@ function renderPortfolio() {
       '<td>' + (hasPrice ? formatKRW(currentVal) : '-') + '</td>' +
       '<td class="' + profitClass + '">' + (hasPrice ? profitSign + formatKRW(profit) : '-') + '</td>' +
       '<td class="' + profitClass + '">' + (hasPrice ? profitSign + profitRate.toFixed(2) + '%' : '-') + '</td>' +
-      '<td><button class="portfolio-edit-btn" onclick="editPortfolio(\'' + item.id + '\')">수정</button></td>' +
-      '<td><button class="portfolio-delete-btn" onclick="deletePortfolio(\'' + item.id + '\')">삭제</button></td>';
+      '<td><button class="portfolio-edit-btn" onclick="editPortfolio(' + origIndex + ')">수정</button></td>' +
+      '<td><button class="portfolio-delete-btn" onclick="deletePortfolio(' + origIndex + ')">삭제</button></td>';
     tbody.appendChild(tr);
   });
 
@@ -385,7 +368,7 @@ function renderPortfolio() {
   }
 }
 
-async function addPortfolio() {
+function addPortfolio() {
   var category = document.getElementById('portfolio-category').value.trim();
   var market = document.getElementById('portfolio-market').value;
   var ticker = document.getElementById('portfolio-ticker').value.trim().toUpperCase();
@@ -397,58 +380,47 @@ async function addPortfolio() {
   if (!buyPrice || buyPrice <= 0) { alert('매수가를 입력해주세요.'); return; }
   if (!quantity || quantity <= 0) { alert('수량을 입력해주세요.'); return; }
 
-  const newItemData = {
-    category: category || '-',
-    market: market,
-    ticker: ticker,
-    name: manualName || null,
-    buyPrice: buyPrice,
-    quantity: Math.round(quantity * 100) / 100,
-    currentPrice: null,
-    exchangeRate: null,
-    createdAt: new Date().toISOString()
-  };
+  var items = getPortfolio();
 
-  try {
-    if (portfolioEditIndex !== -1) {
-      const itemToUpdateId = portfolioEditIndex;
-      const docRef = doc(db, "portfolios", itemToUpdateId);
-      await updateDoc(docRef, {
-        category: newItemData.category,
-        market: newItemData.market,
-        ticker: newItemData.ticker,
-        name: newItemData.name,
-        buyPrice: newItemData.buyPrice,
-        quantity: newItemData.quantity
-      });
-    } else {
-      await addDoc(collection(db, "portfolios"), newItemData);
-    }
-
+  if (portfolioEditIndex >= 0) {
+    items[portfolioEditIndex].category = category || '-';
+    items[portfolioEditIndex].market = market;
+    items[portfolioEditIndex].ticker = ticker;
+    if (manualName) items[portfolioEditIndex].name = manualName;
+    items[portfolioEditIndex].buyPrice = buyPrice;
+    items[portfolioEditIndex].quantity = Math.round(quantity * 100) / 100;
     portfolioEditIndex = -1;
     document.querySelector('.portfolio-form .todo-add-btn').textContent = '추가';
     var cancelBtn = document.getElementById('portfolio-cancel-btn');
     if (cancelBtn) cancelBtn.remove();
-
-    document.getElementById('portfolio-category').value = '';
-    document.getElementById('portfolio-market').value = 'US';
-    document.getElementById('portfolio-ticker').value = '';
-    document.getElementById('portfolio-name').value = '';
-    document.getElementById('portfolio-buy-price').value = '';
-    document.getElementById('portfolio-quantity').value = '';
-  } catch (e) {
-    console.error("Error adding/updating portfolio item: ", e);
-    alert("포트폴리오 항목 추가/업데이트에 실패했습니다.");
+  } else {
+    items.push({
+      category: category || '-',
+      market: market,
+      ticker: ticker,
+      name: manualName || null,
+      buyPrice: buyPrice,
+      quantity: Math.round(quantity * 100) / 100,
+      currentPrice: null,
+      exchangeRate: null
+    });
   }
+
+  savePortfolio(items);
+  renderPortfolio();
+
+  document.getElementById('portfolio-category').value = '';
+  document.getElementById('portfolio-market').value = 'US';
+  document.getElementById('portfolio-ticker').value = '';
+  document.getElementById('portfolio-name').value = '';
+  document.getElementById('portfolio-buy-price').value = '';
+  document.getElementById('portfolio-quantity').value = '';
 }
 
-function editPortfolio(id) { // Accept id instead of index
-  const item = portfolioItems.find(i => i.id === id);
-  if (!item) {
-    console.error("Portfolio item not found for editing:", id);
-    return;
-  }
-  portfolioEditIndex = id; // Store item ID for editing
+function editPortfolio(index) {
+  var items = getPortfolio();
+  var item = items[index];
+  portfolioEditIndex = index;
 
   document.getElementById('portfolio-category').value = item.category || '';
   document.getElementById('portfolio-market').value = item.market || 'US';
@@ -484,18 +456,15 @@ function cancelEditPortfolio() {
   if (cancelBtn) cancelBtn.remove();
 }
 
-async function deletePortfolio(id) {
-  try {
-    await deleteDoc(doc(db, "portfolios", id));
-  } catch (e) {
-    console.error("Error deleting portfolio item: ", e);
-    alert("포트폴리오 항목 삭제에 실패했습니다.");
-  }
+function deletePortfolio(index) {
+  var items = getPortfolio();
+  items.splice(index, 1);
+  savePortfolio(items);
+  renderPortfolio();
 }
 
-async function refreshPortfolio() {
-  var items = [...portfolioItems]; // Use global array
-
+function refreshPortfolio() {
+  var items = getPortfolio();
   if (items.length === 0) { alert('종목을 먼저 추가해주세요.'); return; }
 
   var btn = document.querySelector('.portfolio-refresh-btn');
@@ -504,6 +473,7 @@ async function refreshPortfolio() {
 
   var hasUS = items.some(function(item) { return item.market === 'US'; });
 
+  // Fetch exchange rate only if there are US stocks
   var ratePromise;
   if (hasUS) {
     var rateUrl = 'https://eodhd.com/api/real-time/USDKRW.FOREX?api_token=' + EODHD_API_KEY + '&fmt=json';
@@ -512,94 +482,99 @@ async function refreshPortfolio() {
     ratePromise = Promise.resolve(null);
   }
 
-  try {
-    const rateData = await ratePromise;
-    var exchangeRate = rateData ? (rateData.close || rateData.previousClose || 0) : 0;
+  ratePromise
+    .then(function(rateData) {
+      var exchangeRate = rateData ? (rateData.close || rateData.previousClose || 0) : 0;
 
-    var tickerKeys = [];
-    var tickerList = [];
-    items.forEach(function(item) {
-      var key = item.ticker + '.' + (item.market || 'US');
-      if (tickerKeys.indexOf(key) === -1) {
-        tickerKeys.push(key);
-        tickerList.push({ ticker: item.ticker, market: item.market || 'US' });
-      }
-    });
-
-    var priceFetches = tickerList.map(function(t) {
-      var suffix = t.market === 'KR' ? '.KO' : '.US';
-      var url = 'https://eodhd.com/api/real-time/' + t.ticker + suffix + '?api_token=' + EODHD_API_KEY + '&fmt=json';
-      return fetch(url).then(function(res) { return res.json(); });
-    });
-
-    var needName = tickerList.filter(function(t) {
-      return !items.some(function(item) {
-        return item.ticker === t.ticker && item.market === t.market
-          && item.name && item.name !== item.ticker && item.name !== '-';
-      });
-    });
-    var nameFetches = needName.map(function(t) {
-      var url = 'https://eodhd.com/api/search/' + t.ticker + '?api_token=' + EODHD_API_KEY + '&fmt=json';
-      return fetch(url).then(function(res) { return res.json(); });
-    });
-
-    const [priceResults, nameResults] = await Promise.all([Promise.all(priceFetches), Promise.all(nameFetches)]);
-
-    var priceMap = {};
-    priceResults.forEach(function(data, i) {
-      var key = tickerList[i].ticker + '.' + tickerList[i].market;
-      priceMap[key] = data.close || data.previousClose || 0;
-    });
-
-    var nameMap = {};
-    nameResults.forEach(function(data, i) {
-      var t = needName[i];
-      if (Array.isArray(data)) {
-        var krExchanges = ['KO', 'KQ'];
-        var match;
-        if (t.market === 'KR') {
-          match = data.find(function(d) { return d.Code === t.ticker && krExchanges.indexOf(d.Exchange) !== -1; });
-        } else {
-          match = data.find(function(d) { return d.Code === t.ticker && d.Exchange === 'US'; });
+      // Collect unique ticker+market combos
+      var tickerKeys = [];
+      var tickerList = [];
+      items.forEach(function(item) {
+        var key = item.ticker + '.' + (item.market || 'US');
+        if (tickerKeys.indexOf(key) === -1) {
+          tickerKeys.push(key);
+          tickerList.push({ ticker: item.ticker, market: item.market || 'US' });
         }
-        if (!match) match = data.find(function(d) { return d.Code === t.ticker; });
-        if (!match && data.length > 0) match = data[0];
-        if (match) nameMap[t.ticker + '.' + t.market] = match.Name;
-      }
+      });
+
+      // Fetch prices
+      var priceFetches = tickerList.map(function(t) {
+        var suffix = t.market === 'KR' ? '.KO' : '.US';
+        var url = 'https://eodhd.com/api/real-time/' + t.ticker + suffix + '?api_token=' + EODHD_API_KEY + '&fmt=json';
+        return fetch(url).then(function(res) { return res.json(); });
+      });
+
+      // Fetch names (only for items without a valid name - skip manually entered names)
+      var needName = tickerList.filter(function(t) {
+        return !items.some(function(item) {
+          return item.ticker === t.ticker && item.market === t.market
+            && item.name && item.name !== item.ticker && item.name !== '-';
+        });
+      });
+      var nameFetches = needName.map(function(t) {
+        var url = 'https://eodhd.com/api/search/' + t.ticker + '?api_token=' + EODHD_API_KEY + '&fmt=json';
+        return fetch(url).then(function(res) { return res.json(); });
+      });
+
+      return Promise.all([Promise.all(priceFetches), Promise.all(nameFetches)]).then(function(allResults) {
+        var priceResults = allResults[0];
+        var nameResults = allResults[1];
+
+        var priceMap = {};
+        priceResults.forEach(function(data, i) {
+          var key = tickerList[i].ticker + '.' + tickerList[i].market;
+          priceMap[key] = data.close || data.previousClose || 0;
+        });
+
+        var nameMap = {};
+        nameResults.forEach(function(data, i) {
+          var t = needName[i];
+          if (Array.isArray(data)) {
+            var krExchanges = ['KO', 'KQ'];
+            var match;
+            if (t.market === 'KR') {
+              match = data.find(function(d) { return d.Code === t.ticker && krExchanges.indexOf(d.Exchange) !== -1; });
+            } else {
+              match = data.find(function(d) { return d.Code === t.ticker && d.Exchange === 'US'; });
+            }
+            if (!match) match = data.find(function(d) { return d.Code === t.ticker; });
+            if (!match && data.length > 0) match = data[0];
+            if (match) nameMap[t.ticker + '.' + t.market] = match.Name;
+          }
+        });
+
+        items.forEach(function(item) {
+          var key = item.ticker + '.' + (item.market || 'US');
+          item.currentPrice = priceMap[key] || 0;
+          var fetchedName = nameMap[key];
+          if (fetchedName) item.name = fetchedName;
+          if (item.market === 'US') {
+            item.exchangeRate = exchangeRate;
+          } else {
+            item.exchangeRate = null;
+          }
+        });
+
+        savePortfolio(items);
+        renderPortfolio();
+
+        var infoEl = document.getElementById('portfolio-rate-info');
+        var now = new Date();
+        var timeStr = now.getFullYear() + '-' +
+          String(now.getMonth() + 1).padStart(2, '0') + '-' +
+          String(now.getDate()).padStart(2, '0') + ' ' +
+          String(now.getHours()).padStart(2, '0') + ':' +
+          String(now.getMinutes()).padStart(2, '0');
+        var rateText = hasUS ? '환율: ' + formatKRW(exchangeRate) + '원/$  |  ' : '';
+        infoEl.textContent = rateText + timeStr + ' 업데이트';
+
+        btn.disabled = false;
+        btn.textContent = '🔄 시세 업데이트';
+      });
+    })
+    .catch(function(err) {
+      alert('시세 조회 실패: ' + err.message);
+      btn.disabled = false;
+      btn.textContent = '🔄 시세 업데이트';
     });
-
-    const updatePromises = items.map(async (item) => {
-      var key = item.ticker + '.' + (item.market || 'US');
-      const newCurrentPrice = priceMap[key] || 0;
-      const fetchedName = nameMap[key];
-      const newExchangeRate = (item.market === 'US') ? exchangeRate : null;
-
-      if (item.currentPrice !== newCurrentPrice || item.exchangeRate !== newExchangeRate || (fetchedName && item.name !== fetchedName)) {
-        const docRef = doc(db, "portfolios", item.id);
-        const updateData = { currentPrice: newCurrentPrice, exchangeRate: newExchangeRate };
-        if (fetchedName) updateData.name = fetchedName;
-        await updateDoc(docRef, updateData);
-      }
-    });
-    await Promise.all(updatePromises);
-
-    var infoEl = document.getElementById('portfolio-rate-info');
-    var now = new Date();
-    var timeStr = now.getFullYear() + '-' +
-      String(now.getMonth() + 1).padStart(2, '0') + '-' +
-      String(now.getDate()).padStart(2, '0') + ' ' +
-      String(now.getHours()).padStart(2, '0') + ':' +
-      String(now.getMinutes()).padStart(2, '0');
-    var rateText = hasUS ? '환율: ' + formatKRW(exchangeRate) + '원/$  |  ' : '';
-    infoEl.textContent = rateText + timeStr + ' 업데이트';
-
-    btn.disabled = false;
-    btn.textContent = '🔄 시세 업데이트';
-
-  } catch (err) {
-    console.error("시세 조회 실패: ", err);
-    alert('시세 조회 실패: ' + err.message);
-    btn.disabled = false;
-    btn.textContent = '🔄 시세 업데이트';
-  }
 }
