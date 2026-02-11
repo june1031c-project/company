@@ -213,6 +213,7 @@ function loadTodos() {
 
 // ========== Portfolio ==========
 var EODHD_API_KEY = '6975d9cad29f05.79877483';
+var portfolioEditIndex = -1;
 
 function getPortfolio() {
   var data = localStorage.getItem('portfolio');
@@ -260,6 +261,7 @@ function renderPortfolio() {
       '<td>' + (item.currentPrice ? formatKRW(currentVal) : '-') + '</td>' +
       '<td class="' + profitClass + '">' + (item.currentPrice ? profitSign + formatKRW(profit) : '-') + '</td>' +
       '<td class="' + profitClass + '">' + (item.currentPrice ? profitSign + profitRate.toFixed(2) + '%' : '-') + '</td>' +
+      '<td><button class="portfolio-edit-btn" onclick="editPortfolio(' + index + ')">수정</button></td>' +
       '<td><button class="portfolio-delete-btn" onclick="deletePortfolio(' + index + ')">삭제</button></td>';
     tbody.appendChild(tr);
   });
@@ -276,7 +278,7 @@ function renderPortfolio() {
       '<td>' + (totalValue > 0 ? formatKRW(totalValue) : '-') + '</td>' +
       '<td class="' + cls + '">' + (totalValue > 0 ? sign + formatKRW(totalProfit) : '-') + '</td>' +
       '<td class="' + cls + '">' + (totalValue > 0 ? sign + totalRate.toFixed(2) + '%' : '-') + '</td>' +
-      '<td></td>';
+      '<td></td><td></td>';
     tfoot.appendChild(tfootTr);
   }
 }
@@ -291,19 +293,65 @@ function addPortfolio() {
   if (!quantity || quantity <= 0) { alert('수량을 입력해주세요.'); return; }
 
   var items = getPortfolio();
-  items.push({
-    ticker: ticker,
-    buyPrice: buyPrice,
-    quantity: Math.round(quantity * 100) / 100,
-    currentPrice: null,
-    exchangeRate: null
-  });
+
+  if (portfolioEditIndex >= 0) {
+    // Edit mode: update existing item, keep fetched prices
+    items[portfolioEditIndex].ticker = ticker;
+    items[portfolioEditIndex].buyPrice = buyPrice;
+    items[portfolioEditIndex].quantity = Math.round(quantity * 100) / 100;
+    portfolioEditIndex = -1;
+    document.querySelector('.portfolio-form .todo-add-btn').textContent = '추가';
+    var cancelBtn = document.getElementById('portfolio-cancel-btn');
+    if (cancelBtn) cancelBtn.remove();
+  } else {
+    items.push({
+      ticker: ticker,
+      buyPrice: buyPrice,
+      quantity: Math.round(quantity * 100) / 100,
+      currentPrice: null,
+      exchangeRate: null
+    });
+  }
+
   savePortfolio(items);
   renderPortfolio();
 
   document.getElementById('portfolio-ticker').value = '';
   document.getElementById('portfolio-buy-price').value = '';
   document.getElementById('portfolio-quantity').value = '';
+}
+
+function editPortfolio(index) {
+  var items = getPortfolio();
+  var item = items[index];
+  portfolioEditIndex = index;
+
+  document.getElementById('portfolio-ticker').value = item.ticker;
+  document.getElementById('portfolio-buy-price').value = item.buyPrice;
+  document.getElementById('portfolio-quantity').value = item.quantity;
+
+  var addBtn = document.querySelector('.portfolio-form .todo-add-btn');
+  addBtn.textContent = '저장';
+
+  if (!document.getElementById('portfolio-cancel-btn')) {
+    var cancelBtn = document.createElement('button');
+    cancelBtn.id = 'portfolio-cancel-btn';
+    cancelBtn.className = 'portfolio-cancel-btn';
+    cancelBtn.textContent = '취소';
+    cancelBtn.type = 'button';
+    cancelBtn.onclick = cancelEditPortfolio;
+    addBtn.parentNode.appendChild(cancelBtn);
+  }
+}
+
+function cancelEditPortfolio() {
+  portfolioEditIndex = -1;
+  document.getElementById('portfolio-ticker').value = '';
+  document.getElementById('portfolio-buy-price').value = '';
+  document.getElementById('portfolio-quantity').value = '';
+  document.querySelector('.portfolio-form .todo-add-btn').textContent = '추가';
+  var cancelBtn = document.getElementById('portfolio-cancel-btn');
+  if (cancelBtn) cancelBtn.remove();
 }
 
 function deletePortfolio(index) {

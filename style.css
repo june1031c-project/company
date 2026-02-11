@@ -563,6 +563,37 @@ body.readonly .todo-table td:nth-child(6) {
     background-color: #f8f8f8;
 }
 
+.portfolio-edit-btn {
+    padding: 4px 12px;
+    background-color: #FF9800;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background-color 0.2s ease;
+}
+
+.portfolio-edit-btn:hover {
+    background-color: #F57C00;
+}
+
+.portfolio-cancel-btn {
+    padding: 8px 20px;
+    background-color: #666;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.portfolio-cancel-btn:hover {
+    background-color: #444;
+}
+
 .portfolio-delete-btn {
     padding: 4px 12px;
     background-color: #dc3545;
@@ -582,12 +613,13 @@ body.readonly .portfolio-form {
     display: none;
 }
 
+body.readonly .portfolio-edit-btn,
 body.readonly .portfolio-delete-btn {
     display: none;
 }
 
-body.readonly .portfolio-table th:last-child,
-body.readonly .portfolio-table td:last-child {
+body.readonly .portfolio-table th:nth-last-child(-n+2),
+body.readonly .portfolio-table td:nth-last-child(-n+2) {
     display: none;
 }
 
