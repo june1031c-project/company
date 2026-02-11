@@ -429,12 +429,13 @@ function refreshPortfolio() {
         return fetch(url).then(function(res) { return res.json(); });
       });
 
-      // Fetch names (only for items without a name)
+      // Fetch names (for items without a valid name)
       var needName = tickerList.filter(function(t) {
-        return !items.some(function(item) { return item.ticker === t.ticker && item.market === t.market && item.name; });
+        return !items.some(function(item) {
+          return item.ticker === t.ticker && item.market === t.market && item.name && item.name !== item.ticker;
+        });
       });
       var nameFetches = needName.map(function(t) {
-        var suffix = t.market === 'KR' ? '.KO' : '.US';
         var url = 'https://eodhd.com/api/search/' + t.ticker + '?api_token=' + EODHD_API_KEY + '&fmt=json';
         return fetch(url).then(function(res) { return res.json(); });
       });
@@ -452,9 +453,15 @@ function refreshPortfolio() {
         var nameMap = {};
         nameResults.forEach(function(data, i) {
           var t = needName[i];
-          var exchange = t.market === 'KR' ? 'KO' : 'US';
           if (Array.isArray(data)) {
-            var match = data.find(function(d) { return d.Code === t.ticker && d.Exchange === exchange; });
+            var krExchanges = ['KO', 'KQ'];
+            var match;
+            if (t.market === 'KR') {
+              match = data.find(function(d) { return d.Code === t.ticker && krExchanges.indexOf(d.Exchange) !== -1; });
+            } else {
+              match = data.find(function(d) { return d.Code === t.ticker && d.Exchange === 'US'; });
+            }
+            if (!match) match = data.find(function(d) { return d.Code === t.ticker; });
             if (!match && data.length > 0) match = data[0];
             if (match) nameMap[t.ticker + '.' + t.market] = match.Name;
           }
@@ -463,7 +470,8 @@ function refreshPortfolio() {
         items.forEach(function(item) {
           var key = item.ticker + '.' + (item.market || 'US');
           item.currentPrice = priceMap[key] || 0;
-          if (!item.name) item.name = nameMap[key] || null;
+          var fetchedName = nameMap[key];
+          if (fetchedName) item.name = fetchedName;
           if (item.market === 'US') {
             item.exchangeRate = exchangeRate;
           } else {
