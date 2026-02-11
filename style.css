@@ -238,6 +238,10 @@ td.negative {
 }
 
 /* To-Do Widget Styles */
+.todo-widget {
+    grid-column: 1 / -1;
+}
+
 .todo-widget h3 {
     margin-top: 0;
     font-size: 20px;
