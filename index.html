@@ -195,12 +195,34 @@
                     <input type="number" id="portfolio-quantity" placeholder="수량" step="0.01" />
                     <button class="todo-add-btn" onclick="addPortfolio()">추가</button>
                 </div>
-                <div class="portfolio-table-wrap">
-                    <div class="cash-deposit-input-group">
-                        <label for="cash-deposit-input">현금성자산 (예수금):</label>
-                        <input type="number" id="cash-deposit-input" placeholder="예수금 입력" value="0" />
-                        <button class="cash-deposit-refresh-btn" onclick="updateCashDeposit()">저장</button>
+                <div class="cash-deposit-section">
+                    <h3>현금성 자산 (예수금)</h3>
+                    <div class="cash-deposit-form">
+                        <input type="text" id="cash-deposit-category" placeholder="증권사/구분 (예: 토스증권)" />
+                        <input type="number" id="cash-deposit-amount" placeholder="금액" />
+                        <select id="cash-deposit-currency">
+                            <option value="KRW">KRW (원)</option>
+                            <option value="USD">USD (달러)</option>
+                        </select>
+                        <button class="cash-deposit-add-btn" onclick="addCashDeposit()">추가</button>
                     </div>
+                    <table class="cash-deposit-table">
+                        <thead>
+                            <tr>
+                                <th>구분</th>
+                                <th>금액</th>
+                                <th>통화</th>
+                                <th>수정</th>
+                                <th>삭제</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cash-deposit-tbody"></tbody>
+                        <tfoot id="cash-deposit-tfoot"></tfoot>
+                    </table>
+                </div>
+
+                <div class="portfolio-table-wrap">
+
                     <table class="portfolio-table">
                         <thead>
                             <tr>

@@ -105,8 +105,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Portfolio
   renderPortfolio();
 
-  // Initialize cash deposit input
-  document.getElementById('cash-deposit-input').value = getCashDeposit();
 });
 
 var todoSortKey = 'endDate';
@@ -119,6 +117,17 @@ function getTodos() {
 function saveTodos(todos) {
   localStorage.setItem('todos', JSON.stringify(todos));
 }
+
+function getCashDeposits() {
+  const data = localStorage.getItem('cashDeposits');
+  return data ? JSON.parse(data) : [];
+}
+
+function saveCashDeposits(deposits) {
+  localStorage.setItem('cashDeposits', JSON.stringify(deposits));
+}
+
+var cashDepositEditId = null;
 
 function sortTodos(field) {
   todoSortKey = field;
@@ -214,25 +223,143 @@ function loadTodos() {
   renderTodos();
 }
 
+// ========== Cash Deposit ==========
 
-function getCashDeposit() {
-  const data = localStorage.getItem('cashDeposit');
-  return data ? parseFloat(data) : 0;
-}
+function addCashDeposit() {
+  const categoryInput = document.getElementById('cash-deposit-category');
+  const amountInput = document.getElementById('cash-deposit-amount');
+  const currencyInput = document.getElementById('cash-deposit-currency');
 
-function saveCashDeposit(amount) {
-  localStorage.setItem('cashDeposit', amount.toString());
-}
+  const category = categoryInput.value.trim();
+  let amount = parseFloat(amountInput.value);
+  const currency = currencyInput.value;
 
-function updateCashDeposit() {
-  const input = document.getElementById('cash-deposit-input');
-  let amount = parseFloat(input.value);
-  if (isNaN(amount)) {
-    amount = 0;
+  if (!category) {
+    alert('구분을 입력해주세요.');
+    return;
   }
-  input.value = amount; // Ensure the input reflects the valid number
-  saveCashDeposit(amount);
-  renderPortfolio();
+  if (isNaN(amount) || amount <= 0) {
+    alert('유효한 금액을 입력해주세요.');
+    return;
+  }
+
+  let deposits = getCashDeposits();
+  if (cashDepositEditId !== null) {
+    // Edit existing deposit
+    deposits = deposits.map(dep => dep.id === cashDepositEditId ? { ...dep, category, amount, currency } : dep);
+    cashDepositEditId = null;
+    document.querySelector('.cash-deposit-add-btn').textContent = '추가';
+    const cancelBtn = document.getElementById('cash-deposit-cancel-btn');
+    if (cancelBtn) cancelBtn.remove();
+  } else {
+    // Add new deposit
+    deposits.push({
+      id: Date.now().toString(), // Simple unique ID
+      category: category,
+      amount: amount,
+      currency: currency
+    });
+  }
+
+  saveCashDeposits(deposits);
+  renderPortfolio(); // Re-render whole portfolio to update totals
+
+  // Clear inputs
+  categoryInput.value = '';
+  amountInput.value = '';
+  currencyInput.value = 'KRW';
+}
+
+function editCashDeposit(id) {
+  const deposits = getCashDeposits();
+  const deposit = deposits.find(dep => dep.id === id);
+
+  if (deposit) {
+    document.getElementById('cash-deposit-category').value = deposit.category;
+    document.getElementById('cash-deposit-amount').value = deposit.amount;
+    document.getElementById('cash-deposit-currency').value = deposit.currency;
+    cashDepositEditId = id;
+
+    const addBtn = document.querySelector('.cash-deposit-add-btn');
+    addBtn.textContent = '저장';
+
+    if (!document.getElementById('cash-deposit-cancel-btn')) {
+      const cancelBtn = document.createElement('button');
+      cancelBtn.id = 'cash-deposit-cancel-btn';
+      cancelBtn.className = 'cash-deposit-cancel-btn';
+      cancelBtn.textContent = '취소';
+      cancelBtn.type = 'button';
+      cancelBtn.onclick = cancelEditCashDeposit;
+      addBtn.parentNode.appendChild(cancelBtn);
+    }
+  }
+}
+
+function cancelEditCashDeposit() {
+  cashDepositEditId = null;
+  document.getElementById('cash-deposit-category').value = '';
+  document.getElementById('cash-deposit-amount').value = '';
+  document.getElementById('cash-deposit-currency').value = 'KRW';
+  document.querySelector('.cash-deposit-add-btn').textContent = '추가';
+  const cancelBtn = document.getElementById('cash-deposit-cancel-btn');
+  if (cancelBtn) cancelBtn.remove();
+}
+
+function deleteCashDeposit(id) {
+  let deposits = getCashDeposits();
+  deposits = deposits.filter(dep => dep.id !== id);
+  saveCashDeposits(deposits);
+  renderPortfolio(); // Re-render whole portfolio to update totals
+}
+
+function renderCashDepositsTable(exchangeRate) {
+  const tbody = document.getElementById('cash-deposit-tbody');
+  const tfoot = document.getElementById('cash-deposit-tfoot');
+  const deposits = getCashDeposits();
+
+  tbody.innerHTML = '';
+  tfoot.innerHTML = '';
+
+  let totalCashInKrw = 0;
+
+  deposits.forEach(deposit => {
+    let displayAmount = deposit.amount;
+    let amountInKrw = deposit.amount;
+
+    if (deposit.currency === 'USD') {
+      displayAmount = '$' + deposit.amount.toFixed(2);
+      if (exchangeRate) {
+        amountInKrw = deposit.amount * exchangeRate;
+        displayAmount += ` (${formatKRW(amountInKrw)}원)`;
+      } else {
+        amountInKrw = 0; // Cannot convert without rate
+        displayAmount += ' (환율 정보 없음)';
+      }
+    } else { // KRW
+      displayAmount = formatKRW(deposit.amount) + '원';
+    }
+    totalCashInKrw += amountInKrw;
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${escapeHtml(deposit.category)}</td>
+      <td>${displayAmount}</td>
+      <td>${deposit.currency}</td>
+      <td><button class="cash-deposit-edit-btn" onclick="editCashDeposit('${deposit.id}')">수정</button></td>
+      <td><button class="cash-deposit-delete-btn" onclick="deleteCashDeposit('${deposit.id}')">삭제</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  if (deposits.length > 0) {
+    const tfootTr = document.createElement('tr');
+    tfootTr.innerHTML = `
+      <td colspan="2" style="text-align:center;">총 현금성 자산</td>
+      <td colspan="3">${formatKRW(totalCashInKrw)}원</td>
+    `;
+    tfoot.appendChild(tfootTr);
+  }
+  return totalCashInKrw;
 }
 
 // ========== Portfolio ==========
@@ -281,12 +408,15 @@ function calcPortfolioItem(item) {
   return { evalValue: currentVal, costVal: costVal, profit: profit, profitRate: profitRate };
 }
 
-function renderPortfolio() {
+function renderPortfolio(exchangeRate) {
   var tbody = document.getElementById('portfolio-tbody');
   var tfoot = document.getElementById('portfolio-tfoot');
   var items = getPortfolio();
   tbody.innerHTML = '';
   tfoot.innerHTML = '';
+
+  // Render cash deposits table and get total cash in KRW
+  var totalCashInKrw = renderCashDepositsTable(exchangeRate);
 
   // Build sorted indexed list
   var sorted = items.map(function(item, i) {
@@ -332,8 +462,7 @@ function renderPortfolio() {
 
   var totalCost = 0;
   var totalValue = 0;
-  var cashDeposit = getCashDeposit(); // Get cash deposit
-
+  
   sorted.forEach(function(entry, displayIndex) {
     var item = entry.item;
     var origIndex = entry.origIndex;
@@ -376,20 +505,10 @@ function renderPortfolio() {
     tbody.appendChild(tr);
   });
 
-  // Add cash deposit to total value
-  totalValue += cashDeposit;
+  // Add total cash in KRW to total value
+  totalValue += totalCashInKrw;
 
-  if (items.length > 0 || cashDeposit > 0) { // Render totals even if only cash deposit exists
-    // Cash Deposit Row
-    if (cashDeposit > 0) {
-      var cashDepositTr = document.createElement('tr');
-      cashDepositTr.innerHTML =
-        '<td colspan="9" style="text-align:center;">현금성자산 (예수금)</td>' +
-        '<td>' + formatKRW(cashDeposit) + '</td>' +
-        '<td colspan="4"></td>'; // Empty cells for profit/rate, edit/delete
-      tfoot.appendChild(cashDepositTr);
-    }
-
+  if (items.length > 0 || totalCashInKrw > 0) { // Render totals even if only cash deposit exists
     var totalProfit = totalValue - totalCost;
     var totalRate = totalCost > 0 ? (totalProfit / totalCost) * 100 : (totalValue > 0 ? 100 : 0); // Handle case where totalCost is 0
     var cls = totalProfit >= 0 ? 'positive' : 'negative';
@@ -594,7 +713,7 @@ function refreshPortfolio() {
         });
 
         savePortfolio(items);
-        renderPortfolio();
+        renderPortfolio(exchangeRate);
 
         var infoEl = document.getElementById('portfolio-rate-info');
         var now = new Date();
@@ -616,4 +735,3 @@ function refreshPortfolio() {
       btn.textContent = '🔄 시세 업데이트';
     });
 }
-
