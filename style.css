@@ -183,6 +183,15 @@ body {
     text-decoration: underline;
 }
 
+.law-links-grid li a:empty {
+    pointer-events: none;
+}
+
+.law-links-grid li:has(a:empty) {
+    background-color: #fff;
+    box-shadow: none;
+}
+
 /* Table styles for finance section */
 table {
     width: 100%;
