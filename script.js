@@ -104,7 +104,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Portfolio
   renderPortfolio();
-
 });
 
 var todoSortKey = 'endDate';
@@ -118,6 +117,100 @@ function saveTodos(todos) {
   localStorage.setItem('todos', JSON.stringify(todos));
 }
 
+function sortTodos(field) {
+  todoSortKey = field;
+  renderTodos();
+}
+
+function renderTodos() {
+  const tbody = document.getElementById('todo-tbody');
+  const todos = getTodos();
+
+  // Build indexed list to keep original index for delete/toggle
+  var sorted = todos.map(function(todo, i) { return { todo: todo, origIndex: i }; });
+  sorted.sort(function(a, b) {
+    var va = a.todo[todoSortKey] || '';
+    var vb = b.todo[todoSortKey] || '';
+    if (va === '-') va = '';
+    if (vb === '-') vb = '';
+    return va.localeCompare(vb);
+  });
+
+  // Update header indicators
+  var thStart = document.getElementById('th-start-date');
+  var thEnd = document.getElementById('th-end-date');
+  thStart.textContent = '시작일자' + (todoSortKey === 'startDate' ? ' ▼' : '');
+  thEnd.textContent = '완료일자' + (todoSortKey === 'endDate' ? ' ▼' : '');
+
+  tbody.innerHTML = '';
+  sorted.forEach(function(item, displayIndex) {
+    var todo = item.todo;
+    var origIndex = item.origIndex;
+    var tr = document.createElement('tr');
+    if (todo.completed) {
+      tr.classList.add('completed');
+    }
+    tr.innerHTML =
+      '<td>' + (displayIndex + 1) + '</td>' +
+      '<td>' + todo.startDate + '</td>' +
+      '<td>' + todo.endDate + '</td>' +
+      '<td>' + escapeHtml(todo.detail) + '</td>' +
+      '<td><input type="checkbox" ' + (todo.completed ? 'checked' : '') + ' onchange="toggleComplete(' + origIndex + ')" /></td>' +
+      '<td><button class="todo-delete-btn" onclick="deleteTodo(' + origIndex + ')">삭제</button></td>';
+    tbody.appendChild(tr);
+  });
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function addTodo() {
+  const startDate = document.getElementById('todo-start-date').value;
+  const endDate = document.getElementById('todo-end-date').value;
+  const detail = document.getElementById('todo-detail').value.trim();
+
+  if (!detail) {
+    alert('세부내용을 입력해주세요.');
+    return;
+  }
+
+  const todos = getTodos();
+  todos.push({
+    startDate: startDate || '-',
+    endDate: endDate || '-',
+    detail: detail,
+    completed: false
+  });
+  saveTodos(todos);
+  renderTodos();
+
+  // Clear inputs
+  document.getElementById('todo-start-date').value = '';
+  document.getElementById('todo-end-date').value = '';
+  document.getElementById('todo-detail').value = '';
+}
+
+function deleteTodo(index) {
+  const todos = getTodos();
+  todos.splice(index, 1);
+  saveTodos(todos);
+  renderTodos();
+}
+
+function toggleComplete(index) {
+  const todos = getTodos();
+  todos[index].completed = !todos[index].completed;
+  saveTodos(todos);
+  renderTodos();
+}
+
+function loadTodos() {
+  renderTodos();
+}
+
 // ========== Portfolio ==========
 var EODHD_API_KEY = '6975d9cad29f05.79877483';
 var portfolioEditIndex = -1;
@@ -127,8 +220,7 @@ var portfolioSortAsc = true;
 var portfolioSortLabels = {
   category: '구분', market: '시장', ticker: 'Ticker', name: '종목명',
   currentPrice: '현재가', buyPrice: '매수가(₩)', quantity: '수량',
-  evalValue: '평가금(₩)', profit: '수익금(₩)', profitRate: '수익률',
-  amount: '금액', currency: '통화' // Added for cash items
+  evalValue: '평가금(₩)', profit: '수익금(₩)', profitRate: '수익률'
 };
 
 function sortPortfolio(key) {
@@ -154,34 +246,18 @@ function formatKRW(num) {
   return Math.round(num).toLocaleString('ko-KR');
 }
 
-function calcPortfolioItem(item, exchangeRate) {
-  let evalValue = 0;
-  let costValue = 0;
-  let profit = 0;
-  let profitRate = 0;
-
-  if (item.type === 'cash') {
-    costValue = item.amount; // For cash, cost is its amount
-    evalValue = item.amount;
-    if (item.currency === 'USD' && exchangeRate) {
-      costValue *= exchangeRate;
-      evalValue *= exchangeRate;
-    }
-    // No profit/rate for cash itself
-  } else { // Stock item
-    var isUS = item.market === 'US';
-    evalValue = isUS
-      ? (item.currentPrice || 0) * (item.exchangeRate || (isUS ? exchangeRate : 1)) * item.quantity
-      : (item.currentPrice || 0) * item.quantity;
-    costValue = item.buyPrice * item.quantity;
-    profit = evalValue - costValue;
-    profitRate = costValue > 0 ? (profit / costValue) * 100 : 0;
-  }
-
-  return { evalValue: evalValue, costValue: costValue, profit: profit, profitRate: profitRate };
+function calcPortfolioItem(item) {
+  var isUS = item.market === 'US';
+  var currentVal = isUS
+    ? (item.currentPrice || 0) * (item.exchangeRate || 0) * item.quantity
+    : (item.currentPrice || 0) * item.quantity;
+  var costVal = item.buyPrice * item.quantity;
+  var profit = currentVal - costVal;
+  var profitRate = costVal > 0 ? (profit / costVal) * 100 : 0;
+  return { evalValue: currentVal, costVal: costVal, profit: profit, profitRate: profitRate };
 }
 
-function renderPortfolio(exchangeRate) {
+function renderPortfolio() {
   var tbody = document.getElementById('portfolio-tbody');
   var tfoot = document.getElementById('portfolio-tfoot');
   var items = getPortfolio();
@@ -190,16 +266,16 @@ function renderPortfolio(exchangeRate) {
 
   // Build sorted indexed list
   var sorted = items.map(function(item, i) {
-    var calc = calcPortfolioItem(item, exchangeRate);
-    return { item: item, origIndex: i, evalValue: calc.evalValue, profit: calc.profit, profitRate: calc.profitRate, costValue: calc.costValue };
+    var calc = calcPortfolioItem(item);
+    return { item: item, origIndex: i, evalValue: calc.evalValue, profit: calc.profit, profitRate: calc.profitRate };
   });
 
   sorted.sort(function(a, b) {
     var va, vb;
     var key = portfolioSortKey;
-    if (key === 'evalValue' || key === 'profit' || key === 'profitRate' || key === 'costValue') {
+    if (key === 'evalValue' || key === 'profit' || key === 'profitRate') {
       va = a[key]; vb = b[key];
-    } else if (key === 'currentPrice' || key === 'buyPrice' || key === 'quantity' || key === 'amount') {
+    } else if (key === 'currentPrice' || key === 'buyPrice' || key === 'quantity') {
       va = a.item[key] || 0; vb = b.item[key] || 0;
     } else {
       va = (a.item[key] || '').toString().toLowerCase();
@@ -236,262 +312,166 @@ function renderPortfolio(exchangeRate) {
   sorted.forEach(function(entry, displayIndex) {
     var item = entry.item;
     var origIndex = entry.origIndex;
-    var calc = calcPortfolioItem(item, exchangeRate); // Recalculate with latest exchange rate
+    var calc = calcPortfolioItem(item);
     var currentVal = calc.evalValue;
-    var costVal = calc.costValue;
+    var costVal = calc.costVal;
     var profit = calc.profit;
     var profitRate = calc.profitRate;
+    var hasPrice = item.currentPrice != null && item.currentPrice > 0;
+    var isUS = item.market === 'US';
 
     totalCost += costVal;
-    totalValue += currentVal;
+    if (hasPrice) totalValue += currentVal;
 
     var profitClass = profit >= 0 ? 'positive' : 'negative';
     var profitSign = profit >= 0 ? '+' : '';
 
-    var tr = document.createElement('tr');
-    if (item.type === 'cash') {
-      let displayAmount = formatKRW(item.amount);
-      if (item.currency === 'USD') {
-        displayAmount = '$' + item.amount.toFixed(2);
-        if (exchangeRate) {
-          displayAmount += ` (${formatKRW(currentVal)}원)`;
-        } else {
-          displayAmount += ' (환율 정보 없음)';
-        }
-      } else {
-        displayAmount += '원';
-      }
-
-      tr.innerHTML =
-        '<td>' + (displayIndex + 1) + '</td>' +
-        '<td>' + escapeHtml(item.category || '-') + '</td>' +
-        '<td colspan="4">현금성자산 (' + item.currency + ')</td>' + // Combined ticker/name/currentPrice/rate
-        '<td>' + displayAmount + '</td>' + // 매수가 is actual amount here
-        '<td>-</td>' + // Quantity not applicable
-        '<td>' + formatKRW(currentVal) + '</td>' + // 평가금 is current value
-        '<td>-</td>' + // 수익금 not applicable
-        '<td>-</td>' + // 수익률 not applicable
-        '<td><button class="portfolio-edit-btn" onclick="editPortfolio(\'' + item.id + '\', \'cash\')">수정</button></td>' +
-        '<td><button class="portfolio-delete-btn" onclick="deletePortfolio(\'' + item.id + '\')">삭제</button></td>';
-    } else { // Stock item
-      var hasPrice = item.currentPrice != null && item.currentPrice > 0;
-      var isUS = item.market === 'US';
-      var priceDisplay = '-';
-      if (hasPrice) {
-        priceDisplay = isUS ? '$' + item.currentPrice.toFixed(2) : formatKRW(item.currentPrice) + '원';
-      }
-      var rateDisplay = isUS ? (item.exchangeRate ? formatKRW(item.exchangeRate) : '-') : '-';
-
-      tr.innerHTML =
-        '<td>' + (displayIndex + 1) + '</td>' +
-        '<td>' + escapeHtml(item.category || '-') + '</td>' +
-        '<td>' + (item.market || 'US') + '</td>' +
-        '<td>' + escapeHtml(item.ticker) + '</td>' +
-        '<td>' + escapeHtml(item.name || '-') + '</td>' +
-        '<td>' + priceDisplay + '</td>' +
-        '<td>' + rateDisplay + '</td>' +
-        '<td>' + formatKRW(item.buyPrice) + '</td>' +
-        '<td>' + item.quantity + '</td>' +
-        '<td>' + (hasPrice ? formatKRW(currentVal) : '-') + '</td>' +
-        '<td class="' + profitClass + '">' + (hasPrice ? profitSign + formatKRW(profit) : '-') + '</td>' +
-        '<td class="' + profitClass + '">' + (hasPrice ? profitSign + profitRate.toFixed(2) + '%' : '-') + '</td>' +
-        '<td><button class="portfolio-edit-btn" onclick="editPortfolio(\'' + item.id + '\', \'stock\')">수정</button></td>' +
-        '<td><button class="portfolio-delete-btn" onclick="deletePortfolio(\'' + item.id + '\')">삭제</button></td>';
+    var priceDisplay = '-';
+    if (hasPrice) {
+      priceDisplay = isUS ? '$' + item.currentPrice.toFixed(2) : formatKRW(item.currentPrice) + '원';
     }
+    var rateDisplay = isUS ? (item.exchangeRate ? formatKRW(item.exchangeRate) : '-') : '-';
+
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td>' + (displayIndex + 1) + '</td>' +
+      '<td>' + escapeHtml(item.category || '-') + '</td>' +
+      '<td>' + (item.market || 'US') + '</td>' +
+      '<td>' + escapeHtml(item.ticker) + '</td>' +
+      '<td>' + escapeHtml(item.name || '-') + '</td>' +
+      '<td>' + priceDisplay + '</td>' +
+      '<td>' + rateDisplay + '</td>' +
+      '<td>' + formatKRW(item.buyPrice) + '</td>' +
+      '<td>' + item.quantity + '</td>' +
+      '<td>' + (hasPrice ? formatKRW(currentVal) : '-') + '</td>' +
+      '<td class="' + profitClass + '">' + (hasPrice ? profitSign + formatKRW(profit) : '-') + '</td>' +
+      '<td class="' + profitClass + '">' + (hasPrice ? profitSign + profitRate.toFixed(2) + '%' : '-') + '</td>' +
+      '<td><button class="portfolio-edit-btn" onclick="editPortfolio(' + origIndex + ')">수정</button></td>' +
+      '<td><button class="portfolio-delete-btn" onclick="deletePortfolio(' + origIndex + ')">삭제</button></td>';
     tbody.appendChild(tr);
   });
 
-  if (items.length > 0) {
+  if (items.length > 0 && totalCost > 0) {
     var totalProfit = totalValue - totalCost;
-    var totalRate = totalCost > 0 ? (totalProfit / totalCost) * 100 : (totalValue > 0 ? 100 : 0);
+    var totalRate = (totalProfit / totalCost) * 100;
     var cls = totalProfit >= 0 ? 'positive' : 'negative';
     var sign = totalProfit >= 0 ? '+' : '';
 
     var tfootTr = document.createElement('tr');
     tfootTr.innerHTML =
-      '<td colspan="9" style="text-align:center;">총합계</td>' +
-      '<td>' + formatKRW(totalValue) + '</td>' +
-      '<td class="' + cls + '">' + sign + formatKRW(totalProfit) + '</td>' +
-      '<td class="' + cls + '">' + sign + totalRate.toFixed(2) + '%' + '</td>' +
+      '<td colspan="9" style="text-align:center;">합계</td>' +
+      '<td>' + (totalValue > 0 ? formatKRW(totalValue) : '-') + '</td>' +
+      '<td class="' + cls + '">' + (totalValue > 0 ? sign + formatKRW(totalProfit) : '-') + '</td>' +
+      '<td class="' + cls + '">' + (totalValue > 0 ? sign + totalRate.toFixed(2) + '%' : '-') + '</td>' +
       '<td></td><td></td>';
     tfoot.appendChild(tfootTr);
   }
 }
 
-var portfolioEditId = null; // Use for both stock and cash items
+function addPortfolio() {
+  var category = document.getElementById('portfolio-category').value.trim();
+  var market = document.getElementById('portfolio-market').value;
+  var ticker = document.getElementById('portfolio-ticker').value.trim().toUpperCase();
+  var manualName = document.getElementById('portfolio-name').value.trim();
+  var buyPrice = parseFloat(document.getElementById('portfolio-buy-price').value);
+  var quantity = parseFloat(document.getElementById('portfolio-quantity').value);
 
-function addPortfolioItem() {
-  const stockCategory = document.getElementById('portfolio-category').value.trim();
-  const stockMarket = document.getElementById('portfolio-market').value;
-  const stockTicker = document.getElementById('portfolio-ticker').value.trim().toUpperCase();
-  const stockManualName = document.getElementById('portfolio-name').value.trim();
-  const stockBuyPrice = parseFloat(document.getElementById('portfolio-buy-price').value);
-  const stockQuantity = parseFloat(document.getElementById('portfolio-quantity').value);
+  if (!ticker) { alert('티커를 입력해주세요.'); return; }
+  if (!buyPrice || buyPrice <= 0) { alert('매수가를 입력해주세요.'); return; }
+  if (!quantity || quantity <= 0) { alert('수량을 입력해주세요.'); return; }
 
-  const cashCategory = document.getElementById('cash-deposit-category').value.trim();
-  const cashAmount = parseFloat(document.getElementById('cash-deposit-amount').value);
-  const cashCurrency = document.getElementById('cash-deposit-currency').value;
+  var items = getPortfolio();
 
-  let items = getPortfolio();
-
-  if (portfolioEditId !== null) {
-    // Editing an existing item
-    items = items.map(item => {
-      if (item.id === portfolioEditId) {
-        if (item.type === 'cash') {
-          return {
-            ...item,
-            category: cashCategory || '-',
-            amount: cashAmount,
-            currency: cashCurrency,
-            type: 'cash'
-          };
-        } else { // stock
-          return {
-            ...item,
-            category: stockCategory || '-',
-            market: stockMarket,
-            ticker: stockTicker,
-            name: stockManualName || null,
-            buyPrice: stockBuyPrice,
-            quantity: Math.round(stockQuantity * 100) / 100,
-            type: 'stock'
-          };
-        }
-      }
-      return item;
-    });
-    portfolioEditId = null;
+  if (portfolioEditIndex >= 0) {
+    items[portfolioEditIndex].category = category || '-';
+    items[portfolioEditIndex].market = market;
+    items[portfolioEditIndex].ticker = ticker;
+    if (manualName) items[portfolioEditIndex].name = manualName;
+    items[portfolioEditIndex].buyPrice = buyPrice;
+    items[portfolioEditIndex].quantity = Math.round(quantity * 100) / 100;
+    portfolioEditIndex = -1;
     document.querySelector('.portfolio-form .todo-add-btn').textContent = '추가';
-    const cancelBtn = document.getElementById('portfolio-cancel-btn');
+    var cancelBtn = document.getElementById('portfolio-cancel-btn');
     if (cancelBtn) cancelBtn.remove();
   } else {
-    // Adding a new item
-    // First, check if stock fields are filled
-    if (stockTicker && stockBuyPrice > 0 && stockQuantity > 0) {
-      items.push({
-        id: Date.now().toString() + '-stock',
-        type: 'stock',
-        category: stockCategory || '-',
-        market: stockMarket,
-        ticker: stockTicker,
-        name: stockManualName || null,
-        buyPrice: stockBuyPrice,
-        quantity: Math.round(stockQuantity * 100) / 100,
-        currentPrice: null,
-        exchangeRate: null
-      });
-    }
-
-    // Then, check if cash fields are filled
-    if (cashCategory && cashAmount > 0) {
-      items.push({
-        id: Date.now().toString() + '-cash',
-        type: 'cash',
-        category: cashCategory || '-',
-        amount: cashAmount,
-        currency: cashCurrency
-      });
-    }
-
-    if (!stockTicker && (!cashCategory || !cashAmount)) {
-        alert('주식 또는 현금성 자산 정보를 입력해주세요.');
-        return;
-    }
+    items.push({
+      category: category || '-',
+      market: market,
+      ticker: ticker,
+      name: manualName || null,
+      buyPrice: buyPrice,
+      quantity: Math.round(quantity * 100) / 100,
+      currentPrice: null,
+      exchangeRate: null
+    });
   }
 
   savePortfolio(items);
   renderPortfolio();
 
-  // Clear stock inputs
   document.getElementById('portfolio-category').value = '';
   document.getElementById('portfolio-market').value = 'US';
   document.getElementById('portfolio-ticker').value = '';
   document.getElementById('portfolio-name').value = '';
   document.getElementById('portfolio-buy-price').value = '';
   document.getElementById('portfolio-quantity').value = '';
-
-  // Clear cash inputs
-  document.getElementById('cash-deposit-category').value = '';
-  document.getElementById('cash-deposit-amount').value = '';
-  document.getElementById('cash-deposit-currency').value = 'KRW';
 }
 
-function editPortfolio(id, type) {
+function editPortfolio(index) {
   var items = getPortfolio();
-  var item = items.find(i => i.id === id);
-  portfolioEditId = id;
+  var item = items[index];
+  portfolioEditIndex = index;
 
-  if (item) {
-    if (type === 'cash') {
-      document.getElementById('cash-deposit-category').value = item.category || '';
-      document.getElementById('cash-deposit-amount').value = item.amount;
-      document.getElementById('cash-deposit-currency').value = item.currency || 'KRW';
-    } else { // stock
-      document.getElementById('portfolio-category').value = item.category || '';
-      document.getElementById('portfolio-market').value = item.market || 'US';
-      document.getElementById('portfolio-ticker').value = item.ticker;
-      document.getElementById('portfolio-name').value = item.name || '';
-      document.getElementById('portfolio-buy-price').value = item.buyPrice;
-      document.getElementById('portfolio-quantity').value = item.quantity;
-    }
+  document.getElementById('portfolio-category').value = item.category || '';
+  document.getElementById('portfolio-market').value = item.market || 'US';
+  document.getElementById('portfolio-ticker').value = item.ticker;
+  document.getElementById('portfolio-name').value = item.name || '';
+  document.getElementById('portfolio-buy-price').value = item.buyPrice;
+  document.getElementById('portfolio-quantity').value = item.quantity;
 
-    var addBtn = document.querySelector('.portfolio-form .todo-add-btn');
-    addBtn.textContent = '저장';
+  var addBtn = document.querySelector('.portfolio-form .todo-add-btn');
+  addBtn.textContent = '저장';
 
-    if (!document.getElementById('portfolio-cancel-btn')) {
-      var cancelBtn = document.createElement('button');
-      cancelBtn.id = 'portfolio-cancel-btn';
-      cancelBtn.className = 'portfolio-cancel-btn';
-      cancelBtn.textContent = '취소';
-      cancelBtn.type = 'button';
-      cancelBtn.onclick = cancelEditPortfolio;
-      addBtn.parentNode.appendChild(cancelBtn);
-    }
+  if (!document.getElementById('portfolio-cancel-btn')) {
+    var cancelBtn = document.createElement('button');
+    cancelBtn.id = 'portfolio-cancel-btn';
+    cancelBtn.className = 'portfolio-cancel-btn';
+    cancelBtn.textContent = '취소';
+    cancelBtn.type = 'button';
+    cancelBtn.onclick = cancelEditPortfolio;
+    addBtn.parentNode.appendChild(cancelBtn);
   }
 }
 
 function cancelEditPortfolio() {
-  portfolioEditId = null;
+  portfolioEditIndex = -1;
   document.getElementById('portfolio-category').value = '';
   document.getElementById('portfolio-market').value = 'US';
   document.getElementById('portfolio-ticker').value = '';
   document.getElementById('portfolio-name').value = '';
   document.getElementById('portfolio-buy-price').value = '';
   document.getElementById('portfolio-quantity').value = '';
-
-  document.getElementById('cash-deposit-category').value = '';
-  document.getElementById('cash-deposit-amount').value = '';
-  document.getElementById('cash-deposit-currency').value = 'KRW';
-
   document.querySelector('.portfolio-form .todo-add-btn').textContent = '추가';
   var cancelBtn = document.getElementById('portfolio-cancel-btn');
   if (cancelBtn) cancelBtn.remove();
 }
 
-function deletePortfolio(id) {
+function deletePortfolio(index) {
   var items = getPortfolio();
-  items = items.filter(item => item.id !== id);
+  items.splice(index, 1);
   savePortfolio(items);
   renderPortfolio();
 }
 
 function refreshPortfolio() {
   var items = getPortfolio();
-  // Filter out cash items for API call
-  var stockItems = items.filter(item => item.type !== 'cash');
-
-  if (stockItems.length === 0) {
-    // If only cash items or no items, just render portfolio without API call
-    renderPortfolio();
-    return;
-  }
+  if (items.length === 0) { alert('종목을 먼저 추가해주세요.'); return; }
 
   var btn = document.querySelector('.portfolio-refresh-btn');
   btn.disabled = true;
   btn.textContent = '⏳ 불러오는 중...';
 
-  var hasUS = stockItems.some(function(item) { return item.market === 'US'; });
+  var hasUS = items.some(function(item) { return item.market === 'US'; });
 
   // Fetch exchange rate only if there are US stocks
   var ratePromise;
@@ -509,7 +489,7 @@ function refreshPortfolio() {
       // Collect unique ticker+market combos
       var tickerKeys = [];
       var tickerList = [];
-      stockItems.forEach(function(item) {
+      items.forEach(function(item) {
         var key = item.ticker + '.' + (item.market || 'US');
         if (tickerKeys.indexOf(key) === -1) {
           tickerKeys.push(key);
@@ -526,7 +506,7 @@ function refreshPortfolio() {
 
       // Fetch names (only for items without a valid name - skip manually entered names)
       var needName = tickerList.filter(function(t) {
-        return !stockItems.some(function(item) {
+        return !items.some(function(item) {
           return item.ticker === t.ticker && item.market === t.market
             && item.name && item.name !== item.ticker && item.name !== '-';
         });
@@ -564,21 +544,19 @@ function refreshPortfolio() {
         });
 
         items.forEach(function(item) {
-          if (item.type !== 'cash') { // Only update stock items
-            var key = item.ticker + '.' + (item.market || 'US');
-            item.currentPrice = priceMap[key] || 0;
-            var fetchedName = nameMap[key];
-            if (fetchedName) item.name = fetchedName;
-            if (item.market === 'US') {
-              item.exchangeRate = exchangeRate;
-            } else {
-              item.exchangeRate = null;
-            }
+          var key = item.ticker + '.' + (item.market || 'US');
+          item.currentPrice = priceMap[key] || 0;
+          var fetchedName = nameMap[key];
+          if (fetchedName) item.name = fetchedName;
+          if (item.market === 'US') {
+            item.exchangeRate = exchangeRate;
+          } else {
+            item.exchangeRate = null;
           }
         });
 
         savePortfolio(items);
-        renderPortfolio(exchangeRate);
+        renderPortfolio();
 
         var infoEl = document.getElementById('portfolio-rate-info');
         var now = new Date();
