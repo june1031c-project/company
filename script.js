@@ -269,6 +269,7 @@ function renderPortfolio() {
       '<td>' + escapeHtml(item.category || '-') + '</td>' +
       '<td>' + (item.market || 'US') + '</td>' +
       '<td>' + escapeHtml(item.ticker) + '</td>' +
+      '<td>' + escapeHtml(item.name || '-') + '</td>' +
       '<td>' + priceDisplay + '</td>' +
       '<td>' + rateDisplay + '</td>' +
       '<td>' + formatKRW(item.buyPrice) + '</td>' +
@@ -289,7 +290,7 @@ function renderPortfolio() {
 
     var tfootTr = document.createElement('tr');
     tfootTr.innerHTML =
-      '<td colspan="8" style="text-align:center;">합계</td>' +
+      '<td colspan="9" style="text-align:center;">합계</td>' +
       '<td>' + (totalValue > 0 ? formatKRW(totalValue) : '-') + '</td>' +
       '<td class="' + cls + '">' + (totalValue > 0 ? sign + formatKRW(totalProfit) : '-') + '</td>' +
       '<td class="' + cls + '">' + (totalValue > 0 ? sign + totalRate.toFixed(2) + '%' : '-') + '</td>' +
@@ -421,22 +422,48 @@ function refreshPortfolio() {
         }
       });
 
-      var fetches = tickerList.map(function(t) {
+      // Fetch prices
+      var priceFetches = tickerList.map(function(t) {
         var suffix = t.market === 'KR' ? '.KO' : '.US';
         var url = 'https://eodhd.com/api/real-time/' + t.ticker + suffix + '?api_token=' + EODHD_API_KEY + '&fmt=json';
         return fetch(url).then(function(res) { return res.json(); });
       });
 
-      return Promise.all(fetches).then(function(results) {
+      // Fetch names (only for items without a name)
+      var needName = tickerList.filter(function(t) {
+        return !items.some(function(item) { return item.ticker === t.ticker && item.market === t.market && item.name; });
+      });
+      var nameFetches = needName.map(function(t) {
+        var suffix = t.market === 'KR' ? '.KO' : '.US';
+        var url = 'https://eodhd.com/api/search/' + t.ticker + '?api_token=' + EODHD_API_KEY + '&fmt=json';
+        return fetch(url).then(function(res) { return res.json(); });
+      });
+
+      return Promise.all([Promise.all(priceFetches), Promise.all(nameFetches)]).then(function(allResults) {
+        var priceResults = allResults[0];
+        var nameResults = allResults[1];
+
         var priceMap = {};
-        results.forEach(function(data, i) {
+        priceResults.forEach(function(data, i) {
           var key = tickerList[i].ticker + '.' + tickerList[i].market;
           priceMap[key] = data.close || data.previousClose || 0;
+        });
+
+        var nameMap = {};
+        nameResults.forEach(function(data, i) {
+          var t = needName[i];
+          var exchange = t.market === 'KR' ? 'KO' : 'US';
+          if (Array.isArray(data)) {
+            var match = data.find(function(d) { return d.Code === t.ticker && d.Exchange === exchange; });
+            if (!match && data.length > 0) match = data[0];
+            if (match) nameMap[t.ticker + '.' + t.market] = match.Name;
+          }
         });
 
         items.forEach(function(item) {
           var key = item.ticker + '.' + (item.market || 'US');
           item.currentPrice = priceMap[key] || 0;
+          if (!item.name) item.name = nameMap[key] || null;
           if (item.market === 'US') {
             item.exchangeRate = exchangeRate;
           } else {
