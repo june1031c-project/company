@@ -509,7 +509,8 @@ body.readonly .todo-table td:nth-child(6) {
     flex-wrap: wrap;
 }
 
-.portfolio-form input {
+.portfolio-form input,
+.portfolio-form select {
     padding: 8px 12px;
     border: 1px solid #ddd;
     border-radius: 6px;
@@ -551,7 +552,8 @@ body.readonly .todo-table td:nth-child(6) {
 
 .portfolio-table td:nth-child(1),
 .portfolio-table td:nth-child(2),
-.portfolio-table td:nth-child(3) {
+.portfolio-table td:nth-child(3),
+.portfolio-table td:nth-child(4) {
     text-align: center;
 }
 

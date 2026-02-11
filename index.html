@@ -185,7 +185,11 @@
                 </div>
                 <div class="portfolio-form">
                     <input type="text" id="portfolio-category" placeholder="구분 (예: 토스증권)" />
-                    <input type="text" id="portfolio-ticker" placeholder="티커 (예: AAPL)" />
+                    <select id="portfolio-market">
+                        <option value="US">US (미국)</option>
+                        <option value="KR">KR (한국)</option>
+                    </select>
+                    <input type="text" id="portfolio-ticker" placeholder="티커 (예: AAPL, 005930)" />
                     <input type="number" id="portfolio-buy-price" placeholder="매수가 (원)" />
                     <input type="number" id="portfolio-quantity" placeholder="수량" step="0.01" />
                     <button class="todo-add-btn" onclick="addPortfolio()">추가</button>
@@ -196,8 +200,9 @@
                             <tr>
                                 <th>순번</th>
                                 <th>구분</th>
+                                <th>시장</th>
                                 <th>종목</th>
-                                <th>현재가($)</th>
+                                <th>현재가</th>
                                 <th>환율(₩/$)</th>
                                 <th>매수가(₩)</th>
                                 <th>수량</th>

@@ -239,29 +239,43 @@ function renderPortfolio() {
   var totalValue = 0;
 
   items.forEach(function(item, index) {
-    var currentVal = (item.currentPrice || 0) * (item.exchangeRate || 0) * item.quantity;
+    var isUS = item.market === 'US';
+    var currentVal;
+    if (isUS) {
+      currentVal = (item.currentPrice || 0) * (item.exchangeRate || 0) * item.quantity;
+    } else {
+      currentVal = (item.currentPrice || 0) * item.quantity;
+    }
     var costVal = item.buyPrice * item.quantity;
     var profit = currentVal - costVal;
     var profitRate = costVal > 0 ? (profit / costVal) * 100 : 0;
+    var hasPrice = item.currentPrice != null && item.currentPrice > 0;
 
     totalCost += costVal;
-    totalValue += currentVal;
+    if (hasPrice) totalValue += currentVal;
 
     var profitClass = profit >= 0 ? 'positive' : 'negative';
     var profitSign = profit >= 0 ? '+' : '';
+
+    var priceDisplay = '-';
+    if (hasPrice) {
+      priceDisplay = isUS ? '$' + item.currentPrice.toFixed(2) : formatKRW(item.currentPrice) + '원';
+    }
+    var rateDisplay = isUS ? (item.exchangeRate ? formatKRW(item.exchangeRate) : '-') : '-';
 
     var tr = document.createElement('tr');
     tr.innerHTML =
       '<td>' + (index + 1) + '</td>' +
       '<td>' + escapeHtml(item.category || '-') + '</td>' +
+      '<td>' + (item.market || 'US') + '</td>' +
       '<td>' + escapeHtml(item.ticker) + '</td>' +
-      '<td>' + (item.currentPrice ? '$' + item.currentPrice.toFixed(2) : '-') + '</td>' +
-      '<td>' + (item.exchangeRate ? formatKRW(item.exchangeRate) : '-') + '</td>' +
+      '<td>' + priceDisplay + '</td>' +
+      '<td>' + rateDisplay + '</td>' +
       '<td>' + formatKRW(item.buyPrice) + '</td>' +
       '<td>' + item.quantity + '</td>' +
-      '<td>' + (item.currentPrice ? formatKRW(currentVal) : '-') + '</td>' +
-      '<td class="' + profitClass + '">' + (item.currentPrice ? profitSign + formatKRW(profit) : '-') + '</td>' +
-      '<td class="' + profitClass + '">' + (item.currentPrice ? profitSign + profitRate.toFixed(2) + '%' : '-') + '</td>' +
+      '<td>' + (hasPrice ? formatKRW(currentVal) : '-') + '</td>' +
+      '<td class="' + profitClass + '">' + (hasPrice ? profitSign + formatKRW(profit) : '-') + '</td>' +
+      '<td class="' + profitClass + '">' + (hasPrice ? profitSign + profitRate.toFixed(2) + '%' : '-') + '</td>' +
       '<td><button class="portfolio-edit-btn" onclick="editPortfolio(' + index + ')">수정</button></td>' +
       '<td><button class="portfolio-delete-btn" onclick="deletePortfolio(' + index + ')">삭제</button></td>';
     tbody.appendChild(tr);
@@ -275,7 +289,7 @@ function renderPortfolio() {
 
     var tfootTr = document.createElement('tr');
     tfootTr.innerHTML =
-      '<td colspan="7" style="text-align:center;">합계</td>' +
+      '<td colspan="8" style="text-align:center;">합계</td>' +
       '<td>' + (totalValue > 0 ? formatKRW(totalValue) : '-') + '</td>' +
       '<td class="' + cls + '">' + (totalValue > 0 ? sign + formatKRW(totalProfit) : '-') + '</td>' +
       '<td class="' + cls + '">' + (totalValue > 0 ? sign + totalRate.toFixed(2) + '%' : '-') + '</td>' +
@@ -286,6 +300,7 @@ function renderPortfolio() {
 
 function addPortfolio() {
   var category = document.getElementById('portfolio-category').value.trim();
+  var market = document.getElementById('portfolio-market').value;
   var ticker = document.getElementById('portfolio-ticker').value.trim().toUpperCase();
   var buyPrice = parseFloat(document.getElementById('portfolio-buy-price').value);
   var quantity = parseFloat(document.getElementById('portfolio-quantity').value);
@@ -298,6 +313,7 @@ function addPortfolio() {
 
   if (portfolioEditIndex >= 0) {
     items[portfolioEditIndex].category = category || '-';
+    items[portfolioEditIndex].market = market;
     items[portfolioEditIndex].ticker = ticker;
     items[portfolioEditIndex].buyPrice = buyPrice;
     items[portfolioEditIndex].quantity = Math.round(quantity * 100) / 100;
@@ -308,6 +324,7 @@ function addPortfolio() {
   } else {
     items.push({
       category: category || '-',
+      market: market,
       ticker: ticker,
       buyPrice: buyPrice,
       quantity: Math.round(quantity * 100) / 100,
@@ -320,6 +337,7 @@ function addPortfolio() {
   renderPortfolio();
 
   document.getElementById('portfolio-category').value = '';
+  document.getElementById('portfolio-market').value = 'US';
   document.getElementById('portfolio-ticker').value = '';
   document.getElementById('portfolio-buy-price').value = '';
   document.getElementById('portfolio-quantity').value = '';
@@ -331,6 +349,7 @@ function editPortfolio(index) {
   portfolioEditIndex = index;
 
   document.getElementById('portfolio-category').value = item.category || '';
+  document.getElementById('portfolio-market').value = item.market || 'US';
   document.getElementById('portfolio-ticker').value = item.ticker;
   document.getElementById('portfolio-buy-price').value = item.buyPrice;
   document.getElementById('portfolio-quantity').value = item.quantity;
@@ -352,6 +371,7 @@ function editPortfolio(index) {
 function cancelEditPortfolio() {
   portfolioEditIndex = -1;
   document.getElementById('portfolio-category').value = '';
+  document.getElementById('portfolio-market').value = 'US';
   document.getElementById('portfolio-ticker').value = '';
   document.getElementById('portfolio-buy-price').value = '';
   document.getElementById('portfolio-quantity').value = '';
@@ -375,32 +395,53 @@ function refreshPortfolio() {
   btn.disabled = true;
   btn.textContent = '⏳ 불러오는 중...';
 
-  var rateUrl = 'https://eodhd.com/api/real-time/USDKRW.FOREX?api_token=' + EODHD_API_KEY + '&fmt=json';
+  var hasUS = items.some(function(item) { return item.market === 'US'; });
 
-  fetch(rateUrl)
-    .then(function(res) { return res.json(); })
+  // Fetch exchange rate only if there are US stocks
+  var ratePromise;
+  if (hasUS) {
+    var rateUrl = 'https://eodhd.com/api/real-time/USDKRW.FOREX?api_token=' + EODHD_API_KEY + '&fmt=json';
+    ratePromise = fetch(rateUrl).then(function(res) { return res.json(); });
+  } else {
+    ratePromise = Promise.resolve(null);
+  }
+
+  ratePromise
     .then(function(rateData) {
-      var exchangeRate = rateData.close || rateData.previousClose || 0;
+      var exchangeRate = rateData ? (rateData.close || rateData.previousClose || 0) : 0;
 
-      var tickers = [];
+      // Collect unique ticker+market combos
+      var tickerKeys = [];
+      var tickerList = [];
       items.forEach(function(item) {
-        if (tickers.indexOf(item.ticker) === -1) tickers.push(item.ticker);
+        var key = item.ticker + '.' + (item.market || 'US');
+        if (tickerKeys.indexOf(key) === -1) {
+          tickerKeys.push(key);
+          tickerList.push({ ticker: item.ticker, market: item.market || 'US' });
+        }
       });
 
-      var fetches = tickers.map(function(ticker) {
-        var url = 'https://eodhd.com/api/real-time/' + ticker + '.US?api_token=' + EODHD_API_KEY + '&fmt=json';
+      var fetches = tickerList.map(function(t) {
+        var suffix = t.market === 'KR' ? '.KO' : '.US';
+        var url = 'https://eodhd.com/api/real-time/' + t.ticker + suffix + '?api_token=' + EODHD_API_KEY + '&fmt=json';
         return fetch(url).then(function(res) { return res.json(); });
       });
 
       return Promise.all(fetches).then(function(results) {
         var priceMap = {};
         results.forEach(function(data, i) {
-          priceMap[tickers[i]] = data.close || data.previousClose || 0;
+          var key = tickerList[i].ticker + '.' + tickerList[i].market;
+          priceMap[key] = data.close || data.previousClose || 0;
         });
 
         items.forEach(function(item) {
-          item.currentPrice = priceMap[item.ticker] || 0;
-          item.exchangeRate = exchangeRate;
+          var key = item.ticker + '.' + (item.market || 'US');
+          item.currentPrice = priceMap[key] || 0;
+          if (item.market === 'US') {
+            item.exchangeRate = exchangeRate;
+          } else {
+            item.exchangeRate = null;
+          }
         });
 
         savePortfolio(items);
@@ -413,7 +454,8 @@ function refreshPortfolio() {
           String(now.getDate()).padStart(2, '0') + ' ' +
           String(now.getHours()).padStart(2, '0') + ':' +
           String(now.getMinutes()).padStart(2, '0');
-        infoEl.textContent = '환율: ' + formatKRW(exchangeRate) + '원/$  |  ' + timeStr + ' 업데이트';
+        var rateText = hasUS ? '환율: ' + formatKRW(exchangeRate) + '원/$  |  ' : '';
+        infoEl.textContent = rateText + timeStr + ' 업데이트';
 
         btn.disabled = false;
         btn.textContent = '🔄 시세 업데이트';
