@@ -103,6 +103,8 @@ document.addEventListener('DOMContentLoaded', () => {
   loadTodos();
 });
 
+var todoSortKey = 'endDate';
+
 function getTodos() {
   const data = localStorage.getItem('todos');
   return data ? JSON.parse(data) : [];
@@ -112,22 +114,46 @@ function saveTodos(todos) {
   localStorage.setItem('todos', JSON.stringify(todos));
 }
 
+function sortTodos(field) {
+  todoSortKey = field;
+  renderTodos();
+}
+
 function renderTodos() {
   const tbody = document.getElementById('todo-tbody');
   const todos = getTodos();
+
+  // Build indexed list to keep original index for delete/toggle
+  var sorted = todos.map(function(todo, i) { return { todo: todo, origIndex: i }; });
+  sorted.sort(function(a, b) {
+    var va = a.todo[todoSortKey] || '';
+    var vb = b.todo[todoSortKey] || '';
+    if (va === '-') va = '';
+    if (vb === '-') vb = '';
+    return va.localeCompare(vb);
+  });
+
+  // Update header indicators
+  var thStart = document.getElementById('th-start-date');
+  var thEnd = document.getElementById('th-end-date');
+  thStart.textContent = '시작일자' + (todoSortKey === 'startDate' ? ' ▼' : '');
+  thEnd.textContent = '완료일자' + (todoSortKey === 'endDate' ? ' ▼' : '');
+
   tbody.innerHTML = '';
-  todos.forEach((todo, index) => {
-    const tr = document.createElement('tr');
+  sorted.forEach(function(item, displayIndex) {
+    var todo = item.todo;
+    var origIndex = item.origIndex;
+    var tr = document.createElement('tr');
     if (todo.completed) {
       tr.classList.add('completed');
     }
     tr.innerHTML =
-      '<td>' + (index + 1) + '</td>' +
+      '<td>' + (displayIndex + 1) + '</td>' +
       '<td>' + todo.startDate + '</td>' +
       '<td>' + todo.endDate + '</td>' +
       '<td>' + escapeHtml(todo.detail) + '</td>' +
-      '<td><input type="checkbox" ' + (todo.completed ? 'checked' : '') + ' onchange="toggleComplete(' + index + ')" /></td>' +
-      '<td><button class="todo-delete-btn" onclick="deleteTodo(' + index + ')">삭제</button></td>';
+      '<td><input type="checkbox" ' + (todo.completed ? 'checked' : '') + ' onchange="toggleComplete(' + origIndex + ')" /></td>' +
+      '<td><button class="todo-delete-btn" onclick="deleteTodo(' + origIndex + ')">삭제</button></td>';
     tbody.appendChild(tr);
   });
 }

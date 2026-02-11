@@ -318,6 +318,15 @@ td.negative {
     text-decoration: none;
 }
 
+.sortable-th {
+    cursor: pointer;
+    user-select: none;
+}
+
+.sortable-th:hover {
+    background-color: #eee;
+}
+
 .todo-delete-btn {
     padding: 4px 12px;
     background-color: #dc3545;
