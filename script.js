@@ -1,6 +1,6 @@
 // Login credentials
 const USERS = {
-  'june1031c': { password: 'jun1031c', role: 'admin', label: 'Admin' },
+  'june1031c': { password: 'june1031c', role: 'admin', label: 'Admin' },
   'ewp': { password: 'ewp', role: 'user', label: 'User' }
 };
 
