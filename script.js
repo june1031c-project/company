@@ -303,6 +303,7 @@ function addPortfolio() {
   var category = document.getElementById('portfolio-category').value.trim();
   var market = document.getElementById('portfolio-market').value;
   var ticker = document.getElementById('portfolio-ticker').value.trim().toUpperCase();
+  var manualName = document.getElementById('portfolio-name').value.trim();
   var buyPrice = parseFloat(document.getElementById('portfolio-buy-price').value);
   var quantity = parseFloat(document.getElementById('portfolio-quantity').value);
 
@@ -316,6 +317,7 @@ function addPortfolio() {
     items[portfolioEditIndex].category = category || '-';
     items[portfolioEditIndex].market = market;
     items[portfolioEditIndex].ticker = ticker;
+    if (manualName) items[portfolioEditIndex].name = manualName;
     items[portfolioEditIndex].buyPrice = buyPrice;
     items[portfolioEditIndex].quantity = Math.round(quantity * 100) / 100;
     portfolioEditIndex = -1;
@@ -327,6 +329,7 @@ function addPortfolio() {
       category: category || '-',
       market: market,
       ticker: ticker,
+      name: manualName || null,
       buyPrice: buyPrice,
       quantity: Math.round(quantity * 100) / 100,
       currentPrice: null,
@@ -340,6 +343,7 @@ function addPortfolio() {
   document.getElementById('portfolio-category').value = '';
   document.getElementById('portfolio-market').value = 'US';
   document.getElementById('portfolio-ticker').value = '';
+  document.getElementById('portfolio-name').value = '';
   document.getElementById('portfolio-buy-price').value = '';
   document.getElementById('portfolio-quantity').value = '';
 }
@@ -352,6 +356,7 @@ function editPortfolio(index) {
   document.getElementById('portfolio-category').value = item.category || '';
   document.getElementById('portfolio-market').value = item.market || 'US';
   document.getElementById('portfolio-ticker').value = item.ticker;
+  document.getElementById('portfolio-name').value = item.name || '';
   document.getElementById('portfolio-buy-price').value = item.buyPrice;
   document.getElementById('portfolio-quantity').value = item.quantity;
 
@@ -374,6 +379,7 @@ function cancelEditPortfolio() {
   document.getElementById('portfolio-category').value = '';
   document.getElementById('portfolio-market').value = 'US';
   document.getElementById('portfolio-ticker').value = '';
+  document.getElementById('portfolio-name').value = '';
   document.getElementById('portfolio-buy-price').value = '';
   document.getElementById('portfolio-quantity').value = '';
   document.querySelector('.portfolio-form .todo-add-btn').textContent = '추가';
@@ -429,10 +435,11 @@ function refreshPortfolio() {
         return fetch(url).then(function(res) { return res.json(); });
       });
 
-      // Fetch names (for items without a valid name)
+      // Fetch names (only for items without a valid name - skip manually entered names)
       var needName = tickerList.filter(function(t) {
         return !items.some(function(item) {
-          return item.ticker === t.ticker && item.market === t.market && item.name && item.name !== item.ticker;
+          return item.ticker === t.ticker && item.market === t.market
+            && item.name && item.name !== item.ticker && item.name !== '-';
         });
       });
       var nameFetches = needName.map(function(t) {
