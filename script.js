@@ -104,6 +104,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Portfolio
   renderPortfolio();
+
+  // Initialize cash deposit input
+  document.getElementById('cash-deposit-input').value = getCashDeposit();
 });
 
 var todoSortKey = 'endDate';
@@ -211,6 +214,27 @@ function loadTodos() {
   renderTodos();
 }
 
+
+function getCashDeposit() {
+  const data = localStorage.getItem('cashDeposit');
+  return data ? parseFloat(data) : 0;
+}
+
+function saveCashDeposit(amount) {
+  localStorage.setItem('cashDeposit', amount.toString());
+}
+
+function updateCashDeposit() {
+  const input = document.getElementById('cash-deposit-input');
+  let amount = parseFloat(input.value);
+  if (isNaN(amount)) {
+    amount = 0;
+  }
+  input.value = amount; // Ensure the input reflects the valid number
+  saveCashDeposit(amount);
+  renderPortfolio();
+}
+
 // ========== Portfolio ==========
 var EODHD_API_KEY = '6975d9cad29f05.79877483';
 var portfolioEditIndex = -1;
@@ -308,6 +332,7 @@ function renderPortfolio() {
 
   var totalCost = 0;
   var totalValue = 0;
+  var cashDeposit = getCashDeposit(); // Get cash deposit
 
   sorted.forEach(function(entry, displayIndex) {
     var item = entry.item;
@@ -351,15 +376,28 @@ function renderPortfolio() {
     tbody.appendChild(tr);
   });
 
-  if (items.length > 0 && totalCost > 0) {
+  // Add cash deposit to total value
+  totalValue += cashDeposit;
+
+  if (items.length > 0 || cashDeposit > 0) { // Render totals even if only cash deposit exists
+    // Cash Deposit Row
+    if (cashDeposit > 0) {
+      var cashDepositTr = document.createElement('tr');
+      cashDepositTr.innerHTML =
+        '<td colspan="9" style="text-align:center;">현금성자산 (예수금)</td>' +
+        '<td>' + formatKRW(cashDeposit) + '</td>' +
+        '<td colspan="4"></td>'; // Empty cells for profit/rate, edit/delete
+      tfoot.appendChild(cashDepositTr);
+    }
+
     var totalProfit = totalValue - totalCost;
-    var totalRate = (totalProfit / totalCost) * 100;
+    var totalRate = totalCost > 0 ? (totalProfit / totalCost) * 100 : (totalValue > 0 ? 100 : 0); // Handle case where totalCost is 0
     var cls = totalProfit >= 0 ? 'positive' : 'negative';
     var sign = totalProfit >= 0 ? '+' : '';
 
     var tfootTr = document.createElement('tr');
     tfootTr.innerHTML =
-      '<td colspan="9" style="text-align:center;">합계</td>' +
+      '<td colspan="9" style="text-align:center;">총합계</td>' +
       '<td>' + (totalValue > 0 ? formatKRW(totalValue) : '-') + '</td>' +
       '<td class="' + cls + '">' + (totalValue > 0 ? sign + formatKRW(totalProfit) : '-') + '</td>' +
       '<td class="' + cls + '">' + (totalValue > 0 ? sign + totalRate.toFixed(2) + '%' : '-') + '</td>' +
