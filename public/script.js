@@ -394,6 +394,42 @@ function formatKRW(num) {
   return Math.round(num).toLocaleString('ko-KR');
 }
 
+// Dashboard 포트폴리오 요약 업데이트
+function updateDashboardPortfolio(totalValue, totalProfit, totalRate) {
+  const valueEl = document.getElementById('dashboard-total-value');
+  const profitEl = document.getElementById('dashboard-total-profit');
+  const rateEl = document.getElementById('dashboard-total-rate');
+
+  if (!valueEl || !profitEl || !rateEl) return;
+
+  // 총 평가금
+  if (totalValue > 0) {
+    valueEl.textContent = formatKRW(totalValue) + '원';
+  } else {
+    valueEl.textContent = '-';
+  }
+
+  // 총 수익금
+  if (totalValue > 0) {
+    const profitSign = totalProfit >= 0 ? '+' : '';
+    profitEl.textContent = profitSign + formatKRW(totalProfit) + '원';
+    profitEl.className = 'summary-value ' + (totalProfit >= 0 ? 'positive' : 'negative');
+  } else {
+    profitEl.textContent = '-';
+    profitEl.className = 'summary-value';
+  }
+
+  // 총 수익률
+  if (totalValue > 0) {
+    const rateSign = totalRate >= 0 ? '+' : '';
+    rateEl.textContent = rateSign + totalRate.toFixed(2) + '%';
+    rateEl.className = 'summary-value highlight ' + (totalRate >= 0 ? 'positive' : 'negative');
+  } else {
+    rateEl.textContent = '-';
+    rateEl.className = 'summary-value highlight';
+  }
+}
+
 function calcPortfolioItem(item) {
   if (item.itemType === 'cash') {
     // Cash item calculation
@@ -561,6 +597,12 @@ function renderPortfolio() {
       '<td class="' + cls + '">' + (totalValue > 0 ? sign + totalRate.toFixed(2) + '%' : '-') + '</td>' +
       '<td></td><td></td>';
     tfoot.appendChild(tfootTr);
+
+    // Dashboard 위젯 업데이트
+    updateDashboardPortfolio(totalValue, totalProfit, totalRate);
+  } else {
+    // 데이터가 없을 때 Dashboard 초기화
+    updateDashboardPortfolio(0, 0, 0);
   }
 }
 

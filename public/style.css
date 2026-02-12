@@ -635,3 +635,71 @@ body.readonly .portfolio-table td:nth-last-child(-n+2) {
 .content-section.active {
     display: block; /* Show only the active content section */
 }
+
+/* Dashboard Portfolio Summary Widget */
+.portfolio-summary-widget {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.portfolio-summary-widget .card-icon {
+    font-size: 48px;
+    margin-bottom: 10px;
+}
+
+.portfolio-summary-widget h3 {
+    color: white;
+    margin-bottom: 20px;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.portfolio-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.summary-row:last-child {
+    border-bottom: none;
+}
+
+.summary-row.highlight-row {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 12px 10px;
+    border-radius: 8px;
+    border-bottom: none;
+    margin-top: 8px;
+}
+
+.summary-label {
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0.9;
+}
+
+.summary-value {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.summary-value.highlight {
+    font-size: 24px;
+    color: #fff;
+}
+
+.summary-value.positive {
+    color: #4ade80;
+}
+
+.summary-value.negative {
+    color: #f87171;
+}
