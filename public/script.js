@@ -181,8 +181,8 @@ function loadTodosFromFirestore() {
     todosUnsubscribe();
   }
 
-  // 새 리스너 등록
-  todosUnsubscribe = db.collection('users').doc(uid).collection('todos')
+  // 새 리스너 등록 (공유 데이터 사용)
+  todosUnsubscribe = db.collection('users').doc('company-shared').collection('todos')
     .orderBy('endDate', 'asc')
     .onSnapshot((snapshot) => {
       todosCache = [];
@@ -263,8 +263,8 @@ function addTodo() {
     return;
   }
 
-  // Firestore에 추가
-  db.collection('users').doc(uid).collection('todos').add({
+  // Firestore에 추가 (공유 데이터 사용)
+  db.collection('users').doc('company-shared').collection('todos').add({
     startDate: startDate || '-',
     endDate: endDate || '-',
     detail: detail,
@@ -287,7 +287,7 @@ function deleteTodo(todoId) {
 
   if (!confirm('삭제하시겠습니까?')) return;
 
-  db.collection('users').doc(uid).collection('todos').doc(todoId).delete()
+  db.collection('users').doc('company-shared').collection('todos').doc(todoId).delete()
     .catch((error) => {
       console.error('Error deleting todo:', error);
       alert('To-Do 삭제 실패: ' + error.message);
@@ -301,7 +301,7 @@ function toggleComplete(todoId) {
   const todo = todosCache.find(t => t.id === todoId);
   if (!todo) return;
 
-  db.collection('users').doc(uid).collection('todos').doc(todoId).update({
+  db.collection('users').doc('company-shared').collection('todos').doc(todoId).update({
     completed: !todo.completed
   }).catch((error) => {
     console.error('Error toggling todo:', error);
@@ -373,8 +373,8 @@ function loadPortfolioFromFirestore() {
     portfolioUnsubscribe();
   }
 
-  // 새 리스너 등록
-  portfolioUnsubscribe = db.collection('users').doc(uid).collection('portfolio')
+  // 새 리스너 등록 (공유 데이터 사용)
+  portfolioUnsubscribe = db.collection('users').doc('company-shared').collection('portfolio')
     .onSnapshot((snapshot) => {
       portfolioCache = [];
       snapshot.forEach((doc) => {
@@ -599,7 +599,7 @@ function addAsset() {
 
     if (portfolioEditId) {
       // Edit existing stock
-      db.collection('users').doc(uid).collection('portfolio').doc(portfolioEditId).update(stockData)
+      db.collection('users').doc('company-shared').collection('portfolio').doc(portfolioEditId).update(stockData)
         .then(() => {
           portfolioEditId = null;
           document.querySelector('.portfolio-form .todo-add-btn').textContent = '추가';
@@ -613,7 +613,7 @@ function addAsset() {
         });
     } else {
       // Add new stock
-      db.collection('users').doc(uid).collection('portfolio').add(stockData)
+      db.collection('users').doc('company-shared').collection('portfolio').add(stockData)
         .then(() => {
           clearAssetForm();
         })
@@ -641,7 +641,7 @@ function addAsset() {
 
     if (portfolioEditId) {
       // Edit existing cash
-      db.collection('users').doc(uid).collection('portfolio').doc(portfolioEditId).update(cashData)
+      db.collection('users').doc('company-shared').collection('portfolio').doc(portfolioEditId).update(cashData)
         .then(() => {
           portfolioEditId = null;
           document.querySelector('.portfolio-form .todo-add-btn').textContent = '추가';
@@ -655,7 +655,7 @@ function addAsset() {
         });
     } else {
       // Add new cash
-      db.collection('users').doc(uid).collection('portfolio').add(cashData)
+      db.collection('users').doc('company-shared').collection('portfolio').add(cashData)
         .then(() => {
           clearAssetForm();
         })
@@ -735,7 +735,7 @@ function deletePortfolio(itemId) {
 
   if (!confirm('삭제하시겠습니까?')) return;
 
-  db.collection('users').doc(uid).collection('portfolio').doc(itemId).delete()
+  db.collection('users').doc('company-shared').collection('portfolio').doc(itemId).delete()
     .catch((error) => {
       console.error('Error deleting portfolio item:', error);
       alert('삭제 실패: ' + error.message);
@@ -791,7 +791,7 @@ function refreshPortfolio() {
       var stockIndex = 0;
 
       items.forEach(function(item) {
-        var docRef = db.collection('users').doc(uid).collection('portfolio').doc(item.id);
+        var docRef = db.collection('users').doc('company-shared').collection('portfolio').doc(item.id);
 
         if (item.itemType === 'stock') {
           var updated = updatedItems[stockIndex++];
