@@ -859,3 +859,301 @@ body.readonly .portfolio-table td:nth-last-child(-n+2) {
 .todo-table-wrapper::-webkit-scrollbar-thumb:hover {
     background: #059669;
 }
+
+/* Hamburger Menu Button */
+.hamburger-btn {
+    display: none;
+    flex-direction: column;
+    justify-content: space-around;
+    width: 30px;
+    height: 24px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    z-index: 10;
+}
+
+.hamburger-btn span {
+    width: 30px;
+    height: 3px;
+    background-color: #333;
+    border-radius: 3px;
+    transition: all 0.3s ease;
+}
+
+.hamburger-btn:hover span {
+    background-color: #4CAF50;
+}
+
+/* Sidebar Overlay for Mobile */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 998;
+}
+
+.sidebar-overlay.active {
+    display: block;
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+    /* Show hamburger button on mobile */
+    .hamburger-btn {
+        display: flex;
+    }
+
+    /* Hide sidebar by default on mobile */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: -250px;
+        height: 100vh;
+        z-index: 999;
+        transition: left 0.3s ease;
+        overflow-y: auto;
+    }
+
+    /* Show sidebar when active */
+    .sidebar.active {
+        left: 0;
+    }
+
+    /* Adjust container for mobile */
+    .container {
+        flex-direction: column;
+    }
+
+    /* Full width content on mobile */
+    .content {
+        padding: 15px;
+        width: 100%;
+    }
+
+    /* Adjust header for mobile */
+    .header {
+        padding: 15px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .header h1 {
+        font-size: 20px;
+        order: 2;
+        flex: 1;
+    }
+
+    .hamburger-btn {
+        order: 1;
+    }
+
+    .user-profile {
+        order: 3;
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .user-profile span {
+        font-size: 12px;
+    }
+
+    /* Dashboard Grid - Stack on mobile */
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .dashboard-card {
+        grid-column: 1 / -1 !important;
+    }
+
+    /* Card adjustments */
+    .card-header {
+        padding: 12px 15px;
+    }
+
+    .card-header h3 {
+        font-size: 16px;
+    }
+
+    .card-body {
+        padding: 15px;
+    }
+
+    /* To-Do form - Stack inputs */
+    .todo-form {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .todo-form input[type="date"],
+    .todo-form input[type="text"],
+    .todo-add-btn {
+        width: 100%;
+        min-width: 100%;
+    }
+
+    /* Table responsiveness */
+    .todo-table-wrapper,
+    .portfolio-table-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .todo-table th,
+    .todo-table td {
+        padding: 8px 5px;
+        font-size: 12px;
+    }
+
+    .portfolio-table th,
+    .portfolio-table td {
+        padding: 8px 5px;
+        font-size: 11px;
+    }
+
+    /* Portfolio form adjustments */
+    .portfolio-form {
+        flex-direction: column;
+    }
+
+    .portfolio-form input,
+    .portfolio-form select {
+        width: 100%;
+    }
+
+    /* Widgets grid - Single column */
+    .widgets-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .widget-card.large {
+        grid-column: 1;
+    }
+
+    /* Law links grid - 2 columns on mobile */
+    .law-links-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .law-links-grid li {
+        padding: 8px;
+        font-size: 13px;
+    }
+
+    /* Stat grid adjustments */
+    .stat-grid {
+        gap: 12px;
+    }
+
+    .stat-item {
+        padding: 10px 12px;
+    }
+
+    .stat-label,
+    .stat-value {
+        font-size: 13px;
+    }
+
+    /* Login card adjustments */
+    .login-card {
+        width: 90%;
+        max-width: 360px;
+        padding: 30px 20px;
+    }
+
+    /* Portfolio header adjustments */
+    .portfolio-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .portfolio-header-right {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .portfolio-refresh-btn {
+        width: 100%;
+    }
+}
+
+/* Tablet Responsive Styles */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .sidebar {
+        width: 200px;
+    }
+
+    .logo a {
+        font-size: 20px;
+    }
+
+    .content {
+        padding: 20px;
+    }
+
+    .dashboard-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .todo-card {
+        grid-column: 1 / -1;
+    }
+
+    .law-links-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Small mobile devices */
+@media (max-width: 480px) {
+    .header h1 {
+        font-size: 18px;
+    }
+
+    .card-header h3 {
+        font-size: 14px;
+    }
+
+    .card-icon {
+        font-size: 20px;
+    }
+
+    .stat-label,
+    .stat-value {
+        font-size: 12px;
+    }
+
+    .todo-table th,
+    .todo-table td {
+        font-size: 11px;
+        padding: 6px 3px;
+    }
+
+    .portfolio-table th,
+    .portfolio-table td {
+        font-size: 10px;
+        padding: 6px 3px;
+    }
+
+    .law-links-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .logout-btn {
+        padding: 4px 10px;
+        font-size: 12px;
+    }
+}

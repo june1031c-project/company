@@ -890,3 +890,58 @@ function refreshPortfolio() {
       btn.textContent = '🔄 시세 업데이트';
     });
 }
+
+// ========== Mobile Sidebar Toggle ==========
+function toggleSidebar() {
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.querySelector('.sidebar-overlay');
+
+  // Create overlay if it doesn't exist
+  if (!overlay) {
+    const newOverlay = document.createElement('div');
+    newOverlay.className = 'sidebar-overlay';
+    newOverlay.onclick = closeSidebar;
+    document.body.appendChild(newOverlay);
+  }
+
+  sidebar.classList.toggle('active');
+  document.querySelector('.sidebar-overlay').classList.toggle('active');
+
+  // Prevent body scroll when sidebar is open
+  if (sidebar.classList.contains('active')) {
+    document.body.style.overflow = 'hidden';
+  } else {
+    document.body.style.overflow = '';
+  }
+}
+
+function closeSidebar() {
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.querySelector('.sidebar-overlay');
+
+  sidebar.classList.remove('active');
+  if (overlay) {
+    overlay.classList.remove('active');
+  }
+  document.body.style.overflow = '';
+}
+
+// Close sidebar when clicking on navigation links (mobile)
+document.addEventListener('DOMContentLoaded', function() {
+  const sidebarLinks = document.querySelectorAll('.sidebar-nav a');
+  sidebarLinks.forEach(link => {
+    link.addEventListener('click', function() {
+      // Close sidebar on mobile when link is clicked
+      if (window.innerWidth <= 768) {
+        closeSidebar();
+      }
+    });
+  });
+
+  // Close sidebar when screen is resized to desktop
+  window.addEventListener('resize', function() {
+    if (window.innerWidth > 768) {
+      closeSidebar();
+    }
+  });
+});
