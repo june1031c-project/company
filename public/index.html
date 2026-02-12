@@ -335,6 +335,11 @@
       background-color: #1C64F2 !important;
       width: 56px !important;
       height: 56px !important;
+      display: none !important; /* 기본적으로 숨김 */
+      transition: opacity 0.3s ease !important;
+    }
+    #dify-chatbot-bubble-button.show-chatbot {
+      display: block !important; /* Company 섹션에서만 표시 */
     }
     #dify-chatbot-bubble-window {
       width: 570px !important;

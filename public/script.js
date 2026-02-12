@@ -141,6 +141,27 @@ document.addEventListener('DOMContentLoaded', () => {
       // Update the main title
       mainTitle.textContent = activeLink.textContent.replace(activeLink.querySelector('span').textContent, '').trim();
     }
+
+    // 챗봇 표시/숨김 제어 (Company 섹션에만 표시)
+    toggleChatbot(sectionId === 'work');
+  }
+
+  function toggleChatbot(show) {
+    // 챗봇 버튼이 로드될 때까지 대기
+    const checkChatbot = setInterval(() => {
+      const chatbotButton = document.getElementById('dify-chatbot-bubble-button');
+      if (chatbotButton) {
+        if (show) {
+          chatbotButton.classList.add('show-chatbot');
+        } else {
+          chatbotButton.classList.remove('show-chatbot');
+        }
+        clearInterval(checkChatbot);
+      }
+    }, 100);
+
+    // 5초 후 타임아웃
+    setTimeout(() => clearInterval(checkChatbot), 5000);
   }
 
   // Add event listeners to sidebar links
