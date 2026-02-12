@@ -75,6 +75,7 @@ exports.proxyEODHD = functions.https.onRequest(async (req, res) => {
       const uniqueTickers = new Set();
 
       items.forEach(item => {
+        if (item.itemType !== 'stock') return;
         const key = item.ticker + '.' + (item.market || 'US');
         if (!uniqueTickers.has(key)) {
           uniqueTickers.add(key);
@@ -87,37 +88,26 @@ exports.proxyEODHD = functions.https.onRequest(async (req, res) => {
       
       const priceMap = {};
       for (const t of tickerList) {
-        const suffix = t.market === 'KR' ? '.KO' : '.US';
-        const url = `https://eodhd.com/api/real-time/${t.ticker}${suffix}?api_token=${apiKey}&fmt=json`;
         let price = 0;
+        let key = t.ticker + '.' + t.market;
         
-        try {
-            const eodhdRes = await fetch(url);
-            const eodhdData = await eodhdRes.json();
-            // EODHD can return 0 or an empty object for not-found tickers
-            price = eodhdData.close || eodhdData.previousClose || 0;
-            
-            // Fallback for Korean stocks if EODHD fails
-            if (t.market === 'KR' && (price === 0 || !price)) {
-                console.log(`EODHD failed for ${t.ticker}. Trying Naver...`);
-                const naverPrice = await getPriceFromNaver(t.ticker);
-                if (naverPrice) {
-                    price = naverPrice;
-                }
-            }
-        } catch(e) {
-             console.error(`Error fetching price for ${t.ticker}: ${e.message}`);
-             // Try fallback on error too for KR stocks
-             if (t.market === 'KR') {
-                console.log(`EODHD fetch error for ${t.ticker}. Trying Naver...`);
-                const naverPrice = await getPriceFromNaver(t.ticker);
-                if (naverPrice) {
-                    price = naverPrice;
-                }
+        // 국내 종목이면서, 티커에 영문자가 포함된 경우 Naver에서 시세 조회
+        if (t.market === 'KR' && /[A-Za-z]/.test(t.ticker)) {
+            console.log(`Fetching KR stock ${t.ticker} from Naver finance...`);
+            price = await getPriceFromNaver(t.ticker);
+        } 
+        // 그 외 모든 종목은 EODHD를 통해 시세 조회
+        else {
+            const suffix = t.market === 'KR' ? '.KO' : '.US';
+            const url = `https://eodhd.com/api/real-time/${t.ticker}${suffix}?api_token=${apiKey}&fmt=json`;
+            try {
+                const eodhdRes = await fetch(url);
+                const eodhdData = await eodhdRes.json();
+                price = eodhdData.close || eodhdData.previousClose || 0;
+            } catch(e) {
+                 console.error(`Error fetching price for ${t.ticker} from EODHD: ${e.message}`);
             }
         }
-        
-        const key = t.ticker + '.' + t.market;
         priceMap[key] = price;
       }
 
