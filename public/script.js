@@ -234,8 +234,18 @@ function sortPortfolio(key) {
 }
 
 function getPortfolio() {
-  var data = localStorage.getItem('portfolio');
-  return data ? JSON.parse(data) : [];
+  var dataStr = localStorage.getItem('portfolio');
+  var items = dataStr ? JSON.parse(dataStr) : [];
+
+  // One-time migration for old data
+  if (items.length > 0 && items[0].itemType === undefined) {
+    items.forEach(function(item) {
+      item.itemType = 'stock';
+    });
+    savePortfolio(items);
+  }
+
+  return items;
 }
 
 function savePortfolio(items) {
@@ -247,14 +257,33 @@ function formatKRW(num) {
 }
 
 function calcPortfolioItem(item) {
-  var isUS = item.market === 'US';
-  var currentVal = isUS
-    ? (item.currentPrice || 0) * (item.exchangeRate || 0) * item.quantity
-    : (item.currentPrice || 0) * item.quantity;
-  var costVal = item.buyPrice * item.quantity;
-  var profit = currentVal - costVal;
-  var profitRate = costVal > 0 ? (profit / costVal) * 100 : 0;
-  return { evalValue: currentVal, costVal: costVal, profit: profit, profitRate: profitRate };
+  if (item.itemType === 'cash') {
+    // Cash item calculation
+    var amount = item.amount || 0;
+    var evalValue = amount;
+
+    // USD를 KRW로 환산
+    if (item.currency === 'USD' && item.exchangeRate) {
+      evalValue = amount * item.exchangeRate;
+    }
+
+    return {
+      evalValue: evalValue,
+      costVal: evalValue, // 예수금은 원가=평가금
+      profit: 0,
+      profitRate: 0
+    };
+  } else {
+    // Stock item calculation
+    var isUS = item.market === 'US';
+    var currentVal = isUS
+      ? (item.currentPrice || 0) * (item.exchangeRate || 0) * item.quantity
+      : (item.currentPrice || 0) * item.quantity;
+    var costVal = item.buyPrice * item.quantity;
+    var profit = currentVal - costVal;
+    var profitRate = costVal > 0 ? (profit / costVal) * 100 : 0;
+    return { evalValue: currentVal, costVal: costVal, profit: profit, profitRate: profitRate };
+  }
 }
 
 function renderPortfolio() {
@@ -317,37 +346,67 @@ function renderPortfolio() {
     var costVal = calc.costVal;
     var profit = calc.profit;
     var profitRate = calc.profitRate;
-    var hasPrice = item.currentPrice != null && item.currentPrice > 0;
-    var isUS = item.market === 'US';
-
-    totalCost += costVal;
-    if (hasPrice) totalValue += currentVal;
-
-    var profitClass = profit >= 0 ? 'positive' : 'negative';
-    var profitSign = profit >= 0 ? '+' : '';
-
-    var priceDisplay = '-';
-    if (hasPrice) {
-      priceDisplay = isUS ? '$' + item.currentPrice.toFixed(2) : formatKRW(item.currentPrice) + '원';
-    }
-    var rateDisplay = isUS ? (item.exchangeRate ? formatKRW(item.exchangeRate) : '-') : '-';
 
     var tr = document.createElement('tr');
-    tr.innerHTML =
-      '<td>' + (displayIndex + 1) + '</td>' +
-      '<td>' + escapeHtml(item.category || '-') + '</td>' +
-      '<td>' + (item.market || 'US') + '</td>' +
-      '<td>' + escapeHtml(item.ticker) + '</td>' +
-      '<td>' + escapeHtml(item.name || '-') + '</td>' +
-      '<td>' + priceDisplay + '</td>' +
-      '<td>' + rateDisplay + '</td>' +
-      '<td>' + formatKRW(item.buyPrice) + '</td>' +
-      '<td>' + item.quantity + '</td>' +
-      '<td>' + (hasPrice ? formatKRW(currentVal) : '-') + '</td>' +
-      '<td class="' + profitClass + '">' + (hasPrice ? profitSign + formatKRW(profit) : '-') + '</td>' +
-      '<td class="' + profitClass + '">' + (hasPrice ? profitSign + profitRate.toFixed(2) + '%' : '-') + '</td>' +
-      '<td><button class="portfolio-edit-btn" onclick="editPortfolio(' + origIndex + ')">수정</button></td>' +
-      '<td><button class="portfolio-delete-btn" onclick="deletePortfolio(' + origIndex + ')">삭제</button></td>';
+
+    if (item.itemType === 'cash') {
+      // Render cash row
+      totalCost += costVal;
+      totalValue += currentVal;
+
+      var currency = item.currency === 'USD' ? '$' : '₩';
+      var amountDisplay = item.currency === 'USD'
+        ? '$' + item.amount.toFixed(2)
+        : formatKRW(item.amount) + '원';
+      var rateDisplay = item.currency === 'USD' && item.exchangeRate
+        ? formatKRW(item.exchangeRate)
+        : '-';
+
+      tr.innerHTML =
+        '<td>' + (displayIndex + 1) + '</td>' +
+        '<td>' + escapeHtml(item.category || '-') + '</td>' +
+        '<td colspan="3">[예수금] ' + (item.currency || 'KRW') + '</td>' +
+        '<td>' + amountDisplay + '</td>' +
+        '<td>' + rateDisplay + '</td>' +
+        '<td colspan="2">-</td>' +
+        '<td>' + formatKRW(currentVal) + '</td>' +
+        '<td colspan="2">-</td>' +
+        '<td><button class="portfolio-edit-btn" onclick="editPortfolio(' + origIndex + ')">수정</button></td>' +
+        '<td><button class="portfolio-delete-btn" onclick="deletePortfolio(' + origIndex + ')">삭제</button></td>';
+    } else {
+      // Render stock row
+      var hasPrice = item.currentPrice != null && item.currentPrice > 0;
+      var isUS = item.market === 'US';
+
+      totalCost += costVal;
+      if (hasPrice) totalValue += currentVal;
+
+      var profitClass = profit >= 0 ? 'positive' : 'negative';
+      var profitSign = profit >= 0 ? '+' : '';
+
+      var priceDisplay = '-';
+      if (hasPrice) {
+        priceDisplay = isUS ? '$' + item.currentPrice.toFixed(2) : formatKRW(item.currentPrice) + '원';
+      }
+      var rateDisplay = isUS ? (item.exchangeRate ? formatKRW(item.exchangeRate) : '-') : '-';
+
+      tr.innerHTML =
+        '<td>' + (displayIndex + 1) + '</td>' +
+        '<td>' + escapeHtml(item.category || '-') + '</td>' +
+        '<td>' + (item.market || 'US') + '</td>' +
+        '<td>' + escapeHtml(item.ticker) + '</td>' +
+        '<td>' + escapeHtml(item.name || '-') + '</td>' +
+        '<td>' + priceDisplay + '</td>' +
+        '<td>' + rateDisplay + '</td>' +
+        '<td>' + formatKRW(item.buyPrice) + '</td>' +
+        '<td>' + item.quantity + '</td>' +
+        '<td>' + (hasPrice ? formatKRW(currentVal) : '-') + '</td>' +
+        '<td class="' + profitClass + '">' + (hasPrice ? profitSign + formatKRW(profit) : '-') + '</td>' +
+        '<td class="' + profitClass + '">' + (hasPrice ? profitSign + profitRate.toFixed(2) + '%' : '-') + '</td>' +
+        '<td><button class="portfolio-edit-btn" onclick="editPortfolio(' + origIndex + ')">수정</button></td>' +
+        '<td><button class="portfolio-delete-btn" onclick="deletePortfolio(' + origIndex + ')">삭제</button></td>';
+    }
+
     tbody.appendChild(tr);
   });
 
@@ -382,7 +441,8 @@ function addPortfolio() {
 
   var items = getPortfolio();
 
-  if (portfolioEditIndex >= 0) {
+  if (portfolioEditIndex >= 0 && items[portfolioEditIndex].itemType === 'stock') {
+    // Edit existing stock
     items[portfolioEditIndex].category = category || '-';
     items[portfolioEditIndex].market = market;
     items[portfolioEditIndex].ticker = ticker;
@@ -394,7 +454,9 @@ function addPortfolio() {
     var cancelBtn = document.getElementById('portfolio-cancel-btn');
     if (cancelBtn) cancelBtn.remove();
   } else {
+    // Add new stock
     items.push({
+      itemType: 'stock',
       category: category || '-',
       market: market,
       ticker: ticker,
@@ -417,29 +479,89 @@ function addPortfolio() {
   document.getElementById('portfolio-quantity').value = '';
 }
 
+function addCash() {
+  var category = document.getElementById('cash-category').value.trim();
+  var currency = document.getElementById('cash-currency').value;
+  var amount = parseFloat(document.getElementById('cash-amount').value);
+
+  if (!amount || amount <= 0) {
+    alert('금액을 입력해주세요.');
+    return;
+  }
+
+  var items = getPortfolio();
+
+  if (portfolioEditIndex >= 0 && items[portfolioEditIndex].itemType === 'cash') {
+    // Edit existing cash
+    items[portfolioEditIndex].category = category || '-';
+    items[portfolioEditIndex].currency = currency;
+    items[portfolioEditIndex].amount = amount;
+    portfolioEditIndex = -1;
+  } else {
+    // Add new cash
+    items.push({
+      itemType: 'cash',
+      category: category || '-',
+      currency: currency,
+      amount: amount,
+      exchangeRate: null
+    });
+  }
+
+  savePortfolio(items);
+  renderPortfolio();
+
+  document.getElementById('cash-category').value = '';
+  document.getElementById('cash-currency').value = 'KRW';
+  document.getElementById('cash-amount').value = '';
+}
+
 function editPortfolio(index) {
   var items = getPortfolio();
   var item = items[index];
   portfolioEditIndex = index;
 
-  document.getElementById('portfolio-category').value = item.category || '';
-  document.getElementById('portfolio-market').value = item.market || 'US';
-  document.getElementById('portfolio-ticker').value = item.ticker;
-  document.getElementById('portfolio-name').value = item.name || '';
-  document.getElementById('portfolio-buy-price').value = item.buyPrice;
-  document.getElementById('portfolio-quantity').value = item.quantity;
+  if (item.itemType === 'cash') {
+    // Fill cash form
+    document.getElementById('cash-category').value = item.category || '';
+    document.getElementById('cash-currency').value = item.currency || 'KRW';
+    document.getElementById('cash-amount').value = item.amount;
 
-  var addBtn = document.querySelector('.portfolio-form .todo-add-btn');
-  addBtn.textContent = '저장';
+    // Clear stock form
+    document.getElementById('portfolio-category').value = '';
+    document.getElementById('portfolio-market').value = 'US';
+    document.getElementById('portfolio-ticker').value = '';
+    document.getElementById('portfolio-name').value = '';
+    document.getElementById('portfolio-buy-price').value = '';
+    document.getElementById('portfolio-quantity').value = '';
 
-  if (!document.getElementById('portfolio-cancel-btn')) {
-    var cancelBtn = document.createElement('button');
-    cancelBtn.id = 'portfolio-cancel-btn';
-    cancelBtn.className = 'portfolio-cancel-btn';
-    cancelBtn.textContent = '취소';
-    cancelBtn.type = 'button';
-    cancelBtn.onclick = cancelEditPortfolio;
-    addBtn.parentNode.appendChild(cancelBtn);
+    alert('예수금 항목은 아래 "예수금 추가" 폼에서 수정한 후 "예수금 추가" 버튼을 눌러주세요.');
+  } else {
+    // Fill stock form
+    document.getElementById('portfolio-category').value = item.category || '';
+    document.getElementById('portfolio-market').value = item.market || 'US';
+    document.getElementById('portfolio-ticker').value = item.ticker;
+    document.getElementById('portfolio-name').value = item.name || '';
+    document.getElementById('portfolio-buy-price').value = item.buyPrice;
+    document.getElementById('portfolio-quantity').value = item.quantity;
+
+    // Clear cash form
+    document.getElementById('cash-category').value = '';
+    document.getElementById('cash-currency').value = 'KRW';
+    document.getElementById('cash-amount').value = '';
+
+    var addBtn = document.querySelector('.portfolio-form .todo-add-btn');
+    addBtn.textContent = '저장';
+
+    if (!document.getElementById('portfolio-cancel-btn')) {
+      var cancelBtn = document.createElement('button');
+      cancelBtn.id = 'portfolio-cancel-btn';
+      cancelBtn.className = 'portfolio-cancel-btn';
+      cancelBtn.textContent = '취소';
+      cancelBtn.type = 'button';
+      cancelBtn.onclick = cancelEditPortfolio;
+      addBtn.parentNode.appendChild(cancelBtn);
+    }
   }
 }
 
@@ -465,20 +587,25 @@ function deletePortfolio(index) {
 
 function refreshPortfolio() {
   var items = getPortfolio();
-  if (items.length === 0) { alert('종목을 먼저 추가해주세요.'); return; }
+  var stockItems = items.filter(function(item) { return item.itemType === 'stock'; });
+
+  if (stockItems.length === 0) {
+    alert('업데이트할 주식 종목이 없습니다.');
+    return;
+  }
 
   var btn = document.querySelector('.portfolio-refresh-btn');
   btn.disabled = true;
   btn.textContent = '⏳ 불러오는 중...';
 
-  var hasUS = items.some(function(item) { return item.market === 'US'; });
+  var hasUS = stockItems.some(function(item) { return item.market === 'US'; });
 
   fetch(EODHD_PROXY_FUNCTION_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ items: items, hasUS: hasUS }),
+    body: JSON.stringify({ items: stockItems, hasUS: hasUS }),
   })
     .then(function(response) {
       if (!response.ok) {
@@ -488,7 +615,21 @@ function refreshPortfolio() {
     })
     .then(function(data) {
       const { updatedItems, exchangeRate } = data;
-      savePortfolio(updatedItems);
+
+      // Merge updated stock items back into full portfolio
+      var stockIndex = 0;
+      items = items.map(function(item) {
+        if (item.itemType === 'stock') {
+          return updatedItems[stockIndex++];
+        } else if (item.itemType === 'cash' && item.currency === 'USD') {
+          // Update USD cash exchange rate
+          return { ...item, exchangeRate: exchangeRate };
+        } else {
+          return item;
+        }
+      });
+
+      savePortfolio(items);
       renderPortfolio();
 
       var infoEl = document.getElementById('portfolio-rate-info');
@@ -505,7 +646,7 @@ function refreshPortfolio() {
       btn.textContent = '🔄 시세 업데이트';
     })
     .catch(function(err) {
-      alert('시세 조회 실패 (Firebase Function 오류): ' + err.message);
+      alert('시세 조회 실패: ' + err.message);
       btn.disabled = false;
       btn.textContent = '🔄 시세 업데이트';
     });
