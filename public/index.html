@@ -184,26 +184,27 @@
                     </div>
                 </div>
                 <div class="portfolio-form">
+                    <select id="asset-type" onchange="toggleAssetFields()">
+                        <option value="stock">주식</option>
+                        <option value="cash">예수금</option>
+                    </select>
                     <input type="text" id="portfolio-category" placeholder="구분 (예: 토스증권)" />
-                    <select id="portfolio-market">
+                    <!-- Stock fields -->
+                    <select id="portfolio-market" class="stock-field">
                         <option value="US">US (미국)</option>
                         <option value="KR">KR (한국)</option>
                     </select>
-                    <input type="text" id="portfolio-ticker" placeholder="티커 (예: AAPL, 005930)" />
-                    <input type="text" id="portfolio-name" placeholder="종목명 (미입력 시 자동)" />
-                    <input type="number" id="portfolio-buy-price" placeholder="매수가 (원)" />
-                    <input type="number" id="portfolio-quantity" placeholder="수량" step="0.01" />
-                    <button class="todo-add-btn" onclick="addPortfolio()">추가</button>
-                </div>
-                <h4 class="form-divider-title">예수금 추가</h4>
-                <div class="portfolio-form">
-                    <input type="text" id="cash-category" placeholder="구분 (예: 토스증권)" />
-                    <select id="cash-currency">
+                    <input type="text" id="portfolio-ticker" class="stock-field" placeholder="티커 (예: AAPL, 005930)" />
+                    <input type="text" id="portfolio-name" class="stock-field" placeholder="종목명 (미입력 시 자동)" />
+                    <input type="number" id="portfolio-buy-price" class="stock-field" placeholder="매수가 (원)" />
+                    <input type="number" id="portfolio-quantity" class="stock-field" placeholder="수량" step="0.01" />
+                    <!-- Cash fields -->
+                    <select id="cash-currency" class="cash-field" style="display:none;">
                         <option value="KRW">KRW (원)</option>
                         <option value="USD">USD (달러)</option>
                     </select>
-                    <input type="number" id="cash-amount" placeholder="금액" step="0.01" />
-                    <button class="todo-add-btn" onclick="addCash()">예수금 추가</button>
+                    <input type="number" id="cash-amount" class="cash-field" style="display:none;" placeholder="금액" step="0.01" />
+                    <button class="todo-add-btn" onclick="addAsset()">추가</button>
                 </div>
                 <div class="portfolio-table-wrap">
                     <table class="portfolio-table">

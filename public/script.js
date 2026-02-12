@@ -233,6 +233,20 @@ function sortPortfolio(key) {
   renderPortfolio();
 }
 
+function toggleAssetFields() {
+  var assetType = document.getElementById('asset-type').value;
+  var stockFields = document.querySelectorAll('.stock-field');
+  var cashFields = document.querySelectorAll('.cash-field');
+
+  if (assetType === 'stock') {
+    stockFields.forEach(function(field) { field.style.display = ''; });
+    cashFields.forEach(function(field) { field.style.display = 'none'; });
+  } else {
+    stockFields.forEach(function(field) { field.style.display = 'none'; });
+    cashFields.forEach(function(field) { field.style.display = ''; });
+  }
+}
+
 function getPortfolio() {
   var dataStr = localStorage.getItem('portfolio');
   var items = dataStr ? JSON.parse(dataStr) : [];
@@ -427,93 +441,98 @@ function renderPortfolio() {
   }
 }
 
-function addPortfolio() {
+function addAsset() {
+  var assetType = document.getElementById('asset-type').value;
   var category = document.getElementById('portfolio-category').value.trim();
-  var market = document.getElementById('portfolio-market').value;
-  var ticker = document.getElementById('portfolio-ticker').value.trim().toUpperCase();
-  var manualName = document.getElementById('portfolio-name').value.trim();
-  var buyPrice = parseFloat(document.getElementById('portfolio-buy-price').value);
-  var quantity = parseFloat(document.getElementById('portfolio-quantity').value);
-
-  if (!ticker) { alert('티커를 입력해주세요.'); return; }
-  if (!buyPrice || buyPrice <= 0) { alert('매수가를 입력해주세요.'); return; }
-  if (!quantity || quantity <= 0) { alert('수량을 입력해주세요.'); return; }
-
   var items = getPortfolio();
 
-  if (portfolioEditIndex >= 0 && items[portfolioEditIndex].itemType === 'stock') {
-    // Edit existing stock
-    items[portfolioEditIndex].category = category || '-';
-    items[portfolioEditIndex].market = market;
-    items[portfolioEditIndex].ticker = ticker;
-    if (manualName) items[portfolioEditIndex].name = manualName;
-    items[portfolioEditIndex].buyPrice = buyPrice;
-    items[portfolioEditIndex].quantity = Math.round(quantity * 100) / 100;
-    portfolioEditIndex = -1;
-    document.querySelector('.portfolio-form .todo-add-btn').textContent = '추가';
-    var cancelBtn = document.getElementById('portfolio-cancel-btn');
-    if (cancelBtn) cancelBtn.remove();
-  } else {
-    // Add new stock
-    items.push({
-      itemType: 'stock',
-      category: category || '-',
-      market: market,
-      ticker: ticker,
-      name: manualName || null,
-      buyPrice: buyPrice,
-      quantity: Math.round(quantity * 100) / 100,
-      currentPrice: null,
-      exchangeRate: null
-    });
+  if (assetType === 'stock') {
+    var market = document.getElementById('portfolio-market').value;
+    var ticker = document.getElementById('portfolio-ticker').value.trim().toUpperCase();
+    var manualName = document.getElementById('portfolio-name').value.trim();
+    var buyPrice = parseFloat(document.getElementById('portfolio-buy-price').value);
+    var quantity = parseFloat(document.getElementById('portfolio-quantity').value);
+
+    if (!ticker) { alert('티커를 입력해주세요.'); return; }
+    if (!buyPrice || buyPrice <= 0) { alert('매수가를 입력해주세요.'); return; }
+    if (!quantity || quantity <= 0) { alert('수량을 입력해주세요.'); return; }
+
+    if (portfolioEditIndex >= 0 && items[portfolioEditIndex].itemType === 'stock') {
+      // Edit existing stock
+      items[portfolioEditIndex].category = category || '-';
+      items[portfolioEditIndex].market = market;
+      items[portfolioEditIndex].ticker = ticker;
+      if (manualName) items[portfolioEditIndex].name = manualName;
+      items[portfolioEditIndex].buyPrice = buyPrice;
+      items[portfolioEditIndex].quantity = Math.round(quantity * 100) / 100;
+      portfolioEditIndex = -1;
+      document.querySelector('.portfolio-form .todo-add-btn').textContent = '추가';
+      var cancelBtn = document.getElementById('portfolio-cancel-btn');
+      if (cancelBtn) cancelBtn.remove();
+    } else {
+      // Add new stock
+      items.push({
+        itemType: 'stock',
+        category: category || '-',
+        market: market,
+        ticker: ticker,
+        name: manualName || null,
+        buyPrice: buyPrice,
+        quantity: Math.round(quantity * 100) / 100,
+        currentPrice: null,
+        exchangeRate: null
+      });
+    }
+
+    savePortfolio(items);
+    renderPortfolio();
+    clearAssetForm();
+  } else if (assetType === 'cash') {
+    var currency = document.getElementById('cash-currency').value;
+    var amount = parseFloat(document.getElementById('cash-amount').value);
+
+    if (!amount || amount <= 0) {
+      alert('금액을 입력해주세요.');
+      return;
+    }
+
+    if (portfolioEditIndex >= 0 && items[portfolioEditIndex].itemType === 'cash') {
+      // Edit existing cash
+      items[portfolioEditIndex].category = category || '-';
+      items[portfolioEditIndex].currency = currency;
+      items[portfolioEditIndex].amount = amount;
+      portfolioEditIndex = -1;
+      document.querySelector('.portfolio-form .todo-add-btn').textContent = '추가';
+      var cancelBtn = document.getElementById('portfolio-cancel-btn');
+      if (cancelBtn) cancelBtn.remove();
+    } else {
+      // Add new cash
+      items.push({
+        itemType: 'cash',
+        category: category || '-',
+        currency: currency,
+        amount: amount,
+        exchangeRate: null
+      });
+    }
+
+    savePortfolio(items);
+    renderPortfolio();
+    clearAssetForm();
   }
+}
 
-  savePortfolio(items);
-  renderPortfolio();
-
+function clearAssetForm() {
+  document.getElementById('asset-type').value = 'stock';
   document.getElementById('portfolio-category').value = '';
   document.getElementById('portfolio-market').value = 'US';
   document.getElementById('portfolio-ticker').value = '';
   document.getElementById('portfolio-name').value = '';
   document.getElementById('portfolio-buy-price').value = '';
   document.getElementById('portfolio-quantity').value = '';
-}
-
-function addCash() {
-  var category = document.getElementById('cash-category').value.trim();
-  var currency = document.getElementById('cash-currency').value;
-  var amount = parseFloat(document.getElementById('cash-amount').value);
-
-  if (!amount || amount <= 0) {
-    alert('금액을 입력해주세요.');
-    return;
-  }
-
-  var items = getPortfolio();
-
-  if (portfolioEditIndex >= 0 && items[portfolioEditIndex].itemType === 'cash') {
-    // Edit existing cash
-    items[portfolioEditIndex].category = category || '-';
-    items[portfolioEditIndex].currency = currency;
-    items[portfolioEditIndex].amount = amount;
-    portfolioEditIndex = -1;
-  } else {
-    // Add new cash
-    items.push({
-      itemType: 'cash',
-      category: category || '-',
-      currency: currency,
-      amount: amount,
-      exchangeRate: null
-    });
-  }
-
-  savePortfolio(items);
-  renderPortfolio();
-
-  document.getElementById('cash-category').value = '';
   document.getElementById('cash-currency').value = 'KRW';
   document.getElementById('cash-amount').value = '';
+  toggleAssetFields();
 }
 
 function editPortfolio(index) {
@@ -521,58 +540,43 @@ function editPortfolio(index) {
   var item = items[index];
   portfolioEditIndex = index;
 
+  // Set asset type
+  document.getElementById('asset-type').value = item.itemType;
+  toggleAssetFields();
+
+  // Fill common field
+  document.getElementById('portfolio-category').value = item.category || '';
+
   if (item.itemType === 'cash') {
-    // Fill cash form
-    document.getElementById('cash-category').value = item.category || '';
+    // Fill cash fields
     document.getElementById('cash-currency').value = item.currency || 'KRW';
     document.getElementById('cash-amount').value = item.amount;
-
-    // Clear stock form
-    document.getElementById('portfolio-category').value = '';
-    document.getElementById('portfolio-market').value = 'US';
-    document.getElementById('portfolio-ticker').value = '';
-    document.getElementById('portfolio-name').value = '';
-    document.getElementById('portfolio-buy-price').value = '';
-    document.getElementById('portfolio-quantity').value = '';
-
-    alert('예수금 항목은 아래 "예수금 추가" 폼에서 수정한 후 "예수금 추가" 버튼을 눌러주세요.');
   } else {
-    // Fill stock form
-    document.getElementById('portfolio-category').value = item.category || '';
+    // Fill stock fields
     document.getElementById('portfolio-market').value = item.market || 'US';
     document.getElementById('portfolio-ticker').value = item.ticker;
     document.getElementById('portfolio-name').value = item.name || '';
     document.getElementById('portfolio-buy-price').value = item.buyPrice;
     document.getElementById('portfolio-quantity').value = item.quantity;
+  }
 
-    // Clear cash form
-    document.getElementById('cash-category').value = '';
-    document.getElementById('cash-currency').value = 'KRW';
-    document.getElementById('cash-amount').value = '';
+  var addBtn = document.querySelector('.portfolio-form .todo-add-btn');
+  addBtn.textContent = '저장';
 
-    var addBtn = document.querySelector('.portfolio-form .todo-add-btn');
-    addBtn.textContent = '저장';
-
-    if (!document.getElementById('portfolio-cancel-btn')) {
-      var cancelBtn = document.createElement('button');
-      cancelBtn.id = 'portfolio-cancel-btn';
-      cancelBtn.className = 'portfolio-cancel-btn';
-      cancelBtn.textContent = '취소';
-      cancelBtn.type = 'button';
-      cancelBtn.onclick = cancelEditPortfolio;
-      addBtn.parentNode.appendChild(cancelBtn);
-    }
+  if (!document.getElementById('portfolio-cancel-btn')) {
+    var cancelBtn = document.createElement('button');
+    cancelBtn.id = 'portfolio-cancel-btn';
+    cancelBtn.className = 'portfolio-cancel-btn';
+    cancelBtn.textContent = '취소';
+    cancelBtn.type = 'button';
+    cancelBtn.onclick = cancelEditPortfolio;
+    addBtn.parentNode.appendChild(cancelBtn);
   }
 }
 
 function cancelEditPortfolio() {
   portfolioEditIndex = -1;
-  document.getElementById('portfolio-category').value = '';
-  document.getElementById('portfolio-market').value = 'US';
-  document.getElementById('portfolio-ticker').value = '';
-  document.getElementById('portfolio-name').value = '';
-  document.getElementById('portfolio-buy-price').value = '';
-  document.getElementById('portfolio-quantity').value = '';
+  clearAssetForm();
   document.querySelector('.portfolio-form .todo-add-btn').textContent = '추가';
   var cancelBtn = document.getElementById('portfolio-cancel-btn');
   if (cancelBtn) cancelBtn.remove();
