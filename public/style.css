@@ -137,8 +137,8 @@ body {
 
 .card-header h3 {
     margin: 0;
-    font-size: 16px;
-    font-weight: 600;
+    font-size: 18px;
+    font-weight: 700;
     color: #495057;
 }
 
@@ -186,13 +186,13 @@ body {
 }
 
 .stat-value {
-    font-size: 18px;
-    font-weight: 700;
+    font-size: 14px;
+    font-weight: 600;
     color: #1a1a1a;
 }
 
 .stat-value.large {
-    font-size: 32px;
+    font-size: 22px;
     font-weight: 700;
 }
 
@@ -216,7 +216,7 @@ body {
 }
 
 .update-time {
-    font-size: 13px;
+    font-size: 14px;
     color: #6c757d;
 }
 
@@ -822,7 +822,7 @@ body.readonly .portfolio-table td:nth-last-child(-n+2) {
 }
 
 .dday-number {
-    font-size: 40px;
+    font-size: 24px;
     font-weight: 700;
     color: #2563eb;
     line-height: 1;
@@ -830,7 +830,7 @@ body.readonly .portfolio-table td:nth-last-child(-n+2) {
 }
 
 .dday-project {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 500;
     color: #495057;
 }
