@@ -101,7 +101,7 @@ body {
 /* Dashboard Grid - Unified Design */
 .dashboard-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 20px;
     padding: 0;
 }
@@ -125,20 +125,21 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 20px 24px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    padding: 16px 20px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
 }
 
 .card-header .card-icon {
-    font-size: 28px;
+    font-size: 24px;
     line-height: 1;
 }
 
 .card-header h3 {
     margin: 0;
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 600;
-    color: #1a1a1a;
+    color: #495057;
 }
 
 /* Card Body */
@@ -167,9 +168,9 @@ body {
     background: #e9ecef;
 }
 
-.stat-item.highlight-stat {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+..stat-item.highlight-stat {
+    background: #f8f9fa;
+    border: 2px solid #7c3aed;
     padding: 16px 20px;
 }
 
@@ -180,7 +181,8 @@ body {
 }
 
 .highlight-stat .stat-label {
-    color: rgba(255, 255, 255, 0.9);
+    color: #6d28d9;
+    font-weight: 600;
 }
 
 .stat-value {
@@ -191,10 +193,11 @@ body {
 
 .stat-value.large {
     font-size: 32px;
+    font-weight: 700;
 }
 
 .highlight-stat .stat-value {
-    color: white;
+    color: #1a1a1a;
 }
 
 .stat-value.positive {
@@ -398,24 +401,22 @@ td.negative {
 
 .todo-add-btn {
     padding: 10px 24px;
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    background: #10b981;
     color: #fff;
     border: none;
     border-radius: 8px;
     font-family: inherit;
     font-weight: 600;
     cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    transition: background 0.2s ease;
 }
 
 .todo-add-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    background: #059669;
 }
 
 .todo-add-btn:active {
-    transform: translateY(0);
+    background: #047857;
 }
 
 .todo-table {
@@ -776,46 +777,42 @@ body.readonly .portfolio-table td:nth-last-child(-n+2) {
 }
 
 .todo-card .card-header {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    color: white;
-    border-bottom: none;
+    background: #e8f5e9;
+    border-left: 4px solid #10b981;
 }
 
 .todo-card .card-header h3 {
-    color: white;
+    color: #059669;
 }
 
 /* Portfolio Card */
 .portfolio-card .card-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-bottom: none;
+    background: #f3e8ff;
+    border-left: 4px solid #7c3aed;
 }
 
 .portfolio-card .card-header h3 {
-    color: white;
+    color: #6d28d9;
 }
 
 /* Power Generation Card */
 .power-card .card-header {
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-    color: white;
-    border-bottom: none;
+    background: #fef3c7;
+    border-left: 4px solid #f59e0b;
 }
 
 .power-card .card-header h3 {
-    color: white;
+    color: #d97706;
 }
 
 /* Project D-Day Card */
 .project-card .card-header {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-    color: white;
-    border-bottom: none;
+    background: #dbeafe;
+    border-left: 4px solid #3b82f6;
 }
 
 .project-card .card-header h3 {
-    color: white;
+    color: #2563eb;
 }
 
 /* D-Day Display */
@@ -825,17 +822,17 @@ body.readonly .portfolio-table td:nth-last-child(-n+2) {
 }
 
 .dday-number {
-    font-size: 48px;
+    font-size: 40px;
     font-weight: 700;
-    color: #3b82f6;
+    color: #2563eb;
     line-height: 1;
     margin-bottom: 8px;
 }
 
 .dday-project {
-    font-size: 16px;
-    font-weight: 600;
-    color: #1a1a1a;
+    font-size: 15px;
+    font-weight: 500;
+    color: #495057;
 }
 
 /* To-Do Table Wrapper */
