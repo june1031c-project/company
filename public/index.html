@@ -304,5 +304,53 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
   <script defer type="text/javascript" src="/script.js"></script>
+
+  <!-- Dify Chatbot -->
+  <script>
+    window.difyChatbotConfig = {
+      token: 'bRGewNQUFmPjNVSR',
+      inputs: {
+        // You can define the inputs from the Start node here
+        // key is the variable name
+        // e.g.
+        // name: "NAME"
+      },
+      systemVariables: {
+        // user_id: 'YOU CAN DEFINE USER ID HERE',
+        // conversation_id: 'YOU CAN DEFINE CONVERSATION ID HERE, IT MUST BE A VALID UUID',
+      },
+      userVariables: {
+        // avatar_url: 'YOU CAN DEFINE USER AVATAR URL HERE',
+        // name: 'YOU CAN DEFINE USER NAME HERE',
+      },
+    }
+  </script>
+  <script
+    src="https://udify.app/embed.min.js"
+    id="bRGewNQUFmPjNVSR"
+    defer>
+  </script>
+  <style>
+    #dify-chatbot-bubble-button {
+      background-color: #1C64F2 !important;
+      width: 56px !important;
+      height: 56px !important;
+    }
+    #dify-chatbot-bubble-window {
+      width: 380px !important;
+      height: 600px !important;
+      max-width: 90vw !important;
+      max-height: 85vh !important;
+    }
+    /* 모바일 대응 */
+    @media (max-width: 768px) {
+      #dify-chatbot-bubble-window {
+        width: 100vw !important;
+        height: 100vh !important;
+        max-width: 100vw !important;
+        max-height: 100vh !important;
+      }
+    }
+  </style>
 </body>
 </html>
