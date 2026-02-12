@@ -212,7 +212,7 @@ function loadTodos() {
 }
 
 // ========== Portfolio ==========
-var EODHD_API_KEY = '6975d9cad29f05.79877483';
+const EODHD_PROXY_FUNCTION_URL = 'https://us-central1-company-f4ef5.cloudfunctions.net/proxyEODHD';
 var portfolioEditIndex = -1;
 var portfolioSortKey = 'category';
 var portfolioSortAsc = true;
@@ -473,107 +473,39 @@ function refreshPortfolio() {
 
   var hasUS = items.some(function(item) { return item.market === 'US'; });
 
-  // Fetch exchange rate only if there are US stocks
-  var ratePromise;
-  if (hasUS) {
-    var rateUrl = 'https://eodhd.com/api/real-time/USDKRW.FOREX?api_token=' + EODHD_API_KEY + '&fmt=json';
-    ratePromise = fetch(rateUrl).then(function(res) { return res.json(); });
-  } else {
-    ratePromise = Promise.resolve(null);
-  }
+  fetch(EODHD_PROXY_FUNCTION_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ items: items, hasUS: hasUS }),
+  })
+    .then(function(response) {
+      if (!response.ok) {
+        throw new Error('Firebase Function returned an error: ' + response.statusText);
+      }
+      return response.json();
+    })
+    .then(function(data) {
+      const { updatedItems, exchangeRate } = data;
+      savePortfolio(updatedItems);
+      renderPortfolio();
 
-  ratePromise
-    .then(function(rateData) {
-      var exchangeRate = rateData ? (rateData.close || rateData.previousClose || 0) : 0;
+      var infoEl = document.getElementById('portfolio-rate-info');
+      var now = new Date();
+      var timeStr = now.getFullYear() + '-' +
+        String(now.getMonth() + 1).padStart(2, '0') + '-' +
+        String(now.getDate()).padStart(2, '0') + ' ' +
+        String(now.getHours()).padStart(2, '0') + ':' +
+        String(now.getMinutes()).padStart(2, '0');
+      var rateText = hasUS ? '환율: ' + formatKRW(exchangeRate) + '원/$  |  ' : '';
+      infoEl.textContent = rateText + timeStr + ' 업데이트';
 
-      // Collect unique ticker+market combos
-      var tickerKeys = [];
-      var tickerList = [];
-      items.forEach(function(item) {
-        var key = item.ticker + '.' + (item.market || 'US');
-        if (tickerKeys.indexOf(key) === -1) {
-          tickerKeys.push(key);
-          tickerList.push({ ticker: item.ticker, market: item.market || 'US' });
-        }
-      });
-
-      // Fetch prices
-      var priceFetches = tickerList.map(function(t) {
-        var suffix = t.market === 'KR' ? '.KO' : '.US';
-        var url = 'https://eodhd.com/api/real-time/' + t.ticker + suffix + '?api_token=' + EODHD_API_KEY + '&fmt=json';
-        return fetch(url).then(function(res) { return res.json(); });
-      });
-
-      // Fetch names (only for items without a valid name - skip manually entered names)
-      var needName = tickerList.filter(function(t) {
-        return !items.some(function(item) {
-          return item.ticker === t.ticker && item.market === t.market
-            && item.name && item.name !== item.ticker && item.name !== '-';
-        });
-      });
-      var nameFetches = needName.map(function(t) {
-        var url = 'https://eodhd.com/api/search/' + t.ticker + '?api_token=' + EODHD_API_KEY + '&fmt=json';
-        return fetch(url).then(function(res) { return res.json(); });
-      });
-
-      return Promise.all([Promise.all(priceFetches), Promise.all(nameFetches)]).then(function(allResults) {
-        var priceResults = allResults[0];
-        var nameResults = allResults[1];
-
-        var priceMap = {};
-        priceResults.forEach(function(data, i) {
-          var key = tickerList[i].ticker + '.' + tickerList[i].market;
-          priceMap[key] = data.close || data.previousClose || 0;
-        });
-
-        var nameMap = {};
-        nameResults.forEach(function(data, i) {
-          var t = needName[i];
-          if (Array.isArray(data)) {
-            var krExchanges = ['KO', 'KQ'];
-            var match;
-            if (t.market === 'KR') {
-              match = data.find(function(d) { return d.Code === t.ticker && krExchanges.indexOf(d.Exchange) !== -1; });
-            } else {
-              match = data.find(function(d) { return d.Code === t.ticker && d.Exchange === 'US'; });
-            }
-            if (!match) match = data.find(function(d) { return d.Code === t.ticker; });
-            if (!match && data.length > 0) match = data[0];
-            if (match) nameMap[t.ticker + '.' + t.market] = match.Name;
-          }
-        });
-
-        items.forEach(function(item) {
-          var key = item.ticker + '.' + (item.market || 'US');
-          item.currentPrice = priceMap[key] || 0;
-          var fetchedName = nameMap[key];
-          if (fetchedName) item.name = fetchedName;
-          if (item.market === 'US') {
-            item.exchangeRate = exchangeRate;
-          } else {
-            item.exchangeRate = null;
-          }
-        });
-
-        savePortfolio(items);
-        renderPortfolio();
-
-        var infoEl = document.getElementById('portfolio-rate-info');
-        var now = new Date();
-        var timeStr = now.getFullYear() + '-' +
-          String(now.getMonth() + 1).padStart(2, '0') + '-' +
-          String(now.getDate()).padStart(2, '0') + ' ' +
-          String(now.getHours()).padStart(2, '0') + ':' +
-          String(now.getMinutes()).padStart(2, '0');
-        var rateText = hasUS ? '환율: ' + formatKRW(exchangeRate) + '원/$  |  ' : '';
-        infoEl.textContent = rateText + timeStr + ' 업데이트';
-
-        btn.disabled = false;
-        btn.textContent = '🔄 시세 업데이트';
-      });
+      btn.disabled = false;
+      btn.textContent = '🔄 시세 업데이트';
     })
     .catch(function(err) {
-      alert('시세 조회 실패: ' + err.message);
+      alert('시세 조회 실패 (Firebase Function 오류): ' + err.message);
       btn.disabled = false;
       btn.textContent = '🔄 시세 업데이트';
     });
