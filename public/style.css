@@ -192,7 +192,7 @@ body {
 }
 
 .stat-value.large {
-    font-size: 22px;
+    font-size: 14px;
     font-weight: 700;
 }
 
@@ -822,7 +822,7 @@ body.readonly .portfolio-table td:nth-last-child(-n+2) {
 }
 
 .dday-number {
-    font-size: 24px;
+    font-size: 14px;
     font-weight: 700;
     color: #2563eb;
     line-height: 1;
