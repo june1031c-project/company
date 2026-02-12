@@ -413,20 +413,20 @@ function updateDashboardPortfolio(totalValue, totalProfit, totalRate) {
   if (totalValue > 0) {
     const profitSign = totalProfit >= 0 ? '+' : '';
     profitEl.textContent = profitSign + formatKRW(totalProfit) + '원';
-    profitEl.className = 'summary-value ' + (totalProfit >= 0 ? 'positive' : 'negative');
+    profitEl.className = 'stat-value ' + (totalProfit >= 0 ? 'positive' : 'negative');
   } else {
     profitEl.textContent = '-';
-    profitEl.className = 'summary-value';
+    profitEl.className = 'stat-value';
   }
 
   // 총 수익률
   if (totalValue > 0) {
     const rateSign = totalRate >= 0 ? '+' : '';
     rateEl.textContent = rateSign + totalRate.toFixed(2) + '%';
-    rateEl.className = 'summary-value highlight ' + (totalRate >= 0 ? 'positive' : 'negative');
+    rateEl.className = 'stat-value large ' + (totalRate >= 0 ? 'positive' : 'negative');
   } else {
     rateEl.textContent = '-';
-    rateEl.className = 'summary-value highlight';
+    rateEl.className = 'stat-value large';
   }
 }
 

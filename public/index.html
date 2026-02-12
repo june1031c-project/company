@@ -50,64 +50,100 @@
       </header>
 
       <section id="dashboard" class="content-section active">
-        <div class="widgets-grid">
-          <div class="widget-card todo-widget">
-            <h3>✅ Today's To-Do</h3>
-            <div class="todo-form">
-              <input type="date" id="todo-start-date" title="시작일자" />
-              <input type="date" id="todo-end-date" title="완료일자" />
-              <input type="text" id="todo-detail" placeholder="세부내용 입력" />
-              <button class="todo-add-btn" onclick="addTodo()">추가</button>
+        <div class="dashboard-grid">
+          <!-- To-Do Widget (Full Width) -->
+          <div class="dashboard-card todo-card">
+            <div class="card-header">
+              <span class="card-icon">✅</span>
+              <h3>Today's To-Do</h3>
             </div>
-            <table class="todo-table">
-              <thead>
-                <tr>
-                  <th>순번</th>
-                  <th id="th-start-date" class="sortable-th" onclick="sortTodos('startDate')">시작일자</th>
-                  <th id="th-end-date" class="sortable-th" onclick="sortTodos('endDate')">완료일자 ▼</th>
-                  <th>세부내용</th>
-                  <th>종료</th>
-                  <th>삭제</th>
-                </tr>
-              </thead>
-              <tbody id="todo-tbody"></tbody>
-            </table>
-          </div>
-          <div class="widget-card">
-            <div class="card-icon">⚡️</div>
-            <div class="card-content">
-              <h3>발전량/SMP 요약</h3>
-              <p>PV: 1.2MWh / SMP: 150원</p>
+            <div class="card-body">
+              <div class="todo-form">
+                <input type="date" id="todo-start-date" title="시작일자" />
+                <input type="date" id="todo-end-date" title="완료일자" />
+                <input type="text" id="todo-detail" placeholder="세부내용 입력" />
+                <button class="todo-add-btn" onclick="addTodo()">추가</button>
+              </div>
+              <div class="todo-table-wrapper">
+                <table class="todo-table">
+                  <thead>
+                    <tr>
+                      <th>순번</th>
+                      <th id="th-start-date" class="sortable-th" onclick="sortTodos('startDate')">시작일자</th>
+                      <th id="th-end-date" class="sortable-th" onclick="sortTodos('endDate')">완료일자 ▼</th>
+                      <th>세부내용</th>
+                      <th>종료</th>
+                      <th>삭제</th>
+                    </tr>
+                  </thead>
+                  <tbody id="todo-tbody"></tbody>
+                </table>
+              </div>
             </div>
-            <div class="card-footer"><span>Updated 5m ago</span></div>
           </div>
-          <div class="widget-card portfolio-summary-widget">
-            <div class="card-icon">💹</div>
-            <div class="card-content">
+
+          <!-- Portfolio Widget -->
+          <div class="dashboard-card portfolio-card">
+            <div class="card-header">
+              <span class="card-icon">💹</span>
               <h3>포트폴리오 수익률</h3>
-              <div class="portfolio-summary">
-                <div class="summary-row">
-                  <span class="summary-label">총 평가금</span>
-                  <span class="summary-value" id="dashboard-total-value">-</span>
+            </div>
+            <div class="card-body">
+              <div class="stat-grid">
+                <div class="stat-item">
+                  <div class="stat-label">총 평가금</div>
+                  <div class="stat-value" id="dashboard-total-value">-</div>
                 </div>
-                <div class="summary-row">
-                  <span class="summary-label">총 수익금</span>
-                  <span class="summary-value" id="dashboard-total-profit">-</span>
+                <div class="stat-item">
+                  <div class="stat-label">총 수익금</div>
+                  <div class="stat-value" id="dashboard-total-profit">-</div>
                 </div>
-                <div class="summary-row highlight-row">
-                  <span class="summary-label">총 수익률</span>
-                  <span class="summary-value highlight" id="dashboard-total-rate">-</span>
+                <div class="stat-item highlight-stat">
+                  <div class="stat-label">총 수익률</div>
+                  <div class="stat-value large" id="dashboard-total-rate">-</div>
                 </div>
               </div>
             </div>
           </div>
-          <div class="widget-card">
-            <div class="card-icon">🗓️</div>
-            <div class="card-content">
-              <h3>UNIST 과제 D-Day</h3>
-              <p>D-5 for Project Alpha</p>
+
+          <!-- Power Generation Widget -->
+          <div class="dashboard-card power-card">
+            <div class="card-header">
+              <span class="card-icon">⚡</span>
+              <h3>발전량/SMP 요약</h3>
             </div>
-            <div class="card-footer"><span>AI Grad School</span></div>
+            <div class="card-body">
+              <div class="stat-grid">
+                <div class="stat-item">
+                  <div class="stat-label">PV 발전량</div>
+                  <div class="stat-value">1.2 MWh</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-label">SMP 단가</div>
+                  <div class="stat-value">150원</div>
+                </div>
+              </div>
+              <div class="card-footer">
+                <span class="update-time">Updated 5m ago</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- UNIST Project Widget -->
+          <div class="dashboard-card project-card">
+            <div class="card-header">
+              <span class="card-icon">🗓️</span>
+              <h3>UNIST 과제 D-Day</h3>
+            </div>
+            <div class="card-body">
+              <div class="dday-display">
+                <div class="dday-number">D-5</div>
+                <div class="dday-project">Project Alpha</div>
+              </div>
+              <div class="card-footer">
+                <span class="update-time">AI Grad School</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>

@@ -98,7 +98,126 @@ body {
     color: #555;
 }
 
-/* Widgets Grid */
+/* Dashboard Grid - Unified Design */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    padding: 0;
+}
+
+/* Dashboard Cards - Base Style */
+.dashboard-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* Card Header */
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.card-header .card-icon {
+    font-size: 28px;
+    line-height: 1;
+}
+
+.card-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
+/* Card Body */
+.card-body {
+    padding: 24px;
+}
+
+/* Stat Grid - Unified Layout */
+.stat-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    transition: background 0.2s ease;
+}
+
+.stat-item:hover {
+    background: #e9ecef;
+}
+
+.stat-item.highlight-stat {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 16px 20px;
+}
+
+.stat-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #6c757d;
+}
+
+.highlight-stat .stat-label {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.stat-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+.stat-value.large {
+    font-size: 32px;
+}
+
+.highlight-stat .stat-value {
+    color: white;
+}
+
+.stat-value.positive {
+    color: #10b981;
+}
+
+.stat-value.negative {
+    color: #ef4444;
+}
+
+/* Card Footer */
+.card-footer {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.update-time {
+    font-size: 13px;
+    color: #6c757d;
+}
+
+/* Legacy Widgets Grid Support */
 .widgets-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -252,38 +371,51 @@ td.negative {
 .todo-form {
     display: flex;
     gap: 10px;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
     flex-wrap: wrap;
 }
 
 .todo-form input[type="date"],
 .todo-form input[type="text"] {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
+    padding: 10px 14px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
     font-family: inherit;
     font-size: 14px;
+    transition: border-color 0.2s ease;
+}
+
+.todo-form input[type="date"]:focus,
+.todo-form input[type="text"]:focus {
+    outline: none;
+    border-color: #10b981;
 }
 
 .todo-form input[type="text"] {
     flex: 1;
-    min-width: 150px;
+    min-width: 200px;
 }
 
 .todo-add-btn {
-    padding: 8px 20px;
-    background-color: #4CAF50;
+    padding: 10px 24px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     color: #fff;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     font-family: inherit;
     font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
 
 .todo-add-btn:hover {
-    background-color: #388E3C;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.todo-add-btn:active {
+    transform: translateY(0);
 }
 
 .todo-table {
@@ -636,70 +768,97 @@ body.readonly .portfolio-table td:nth-last-child(-n+2) {
     display: block; /* Show only the active content section */
 }
 
-/* Dashboard Portfolio Summary Widget */
-.portfolio-summary-widget {
+/* Specific Dashboard Card Styles */
+
+/* To-Do Card - Full Width */
+.todo-card {
+    grid-column: 1 / -1;
+}
+
+.todo-card .card-header {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border-bottom: none;
+}
+
+.todo-card .card-header h3 {
+    color: white;
+}
+
+/* Portfolio Card */
+.portfolio-card .card-header {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
+    border-bottom: none;
 }
 
-.portfolio-summary-widget .card-icon {
-    font-size: 48px;
-    margin-bottom: 10px;
-}
-
-.portfolio-summary-widget h3 {
+.portfolio-card .card-header h3 {
     color: white;
-    margin-bottom: 20px;
-    font-size: 18px;
-    font-weight: 600;
 }
 
-.portfolio-summary {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.summary-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.summary-row:last-child {
+/* Power Generation Card */
+.power-card .card-header {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
     border-bottom: none;
 }
 
-.summary-row.highlight-row {
-    background: rgba(255, 255, 255, 0.1);
-    padding: 12px 10px;
-    border-radius: 8px;
+.power-card .card-header h3 {
+    color: white;
+}
+
+/* Project D-Day Card */
+.project-card .card-header {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
     border-bottom: none;
-    margin-top: 8px;
 }
 
-.summary-label {
-    font-size: 14px;
-    font-weight: 500;
-    opacity: 0.9;
+.project-card .card-header h3 {
+    color: white;
 }
 
-.summary-value {
-    font-size: 16px;
+/* D-Day Display */
+.dday-display {
+    text-align: center;
+    padding: 20px 0;
+}
+
+.dday-number {
+    font-size: 48px;
     font-weight: 700;
+    color: #3b82f6;
+    line-height: 1;
+    margin-bottom: 8px;
 }
 
-.summary-value.highlight {
-    font-size: 24px;
-    color: #fff;
+.dday-project {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a1a1a;
 }
 
-.summary-value.positive {
-    color: #4ade80;
+/* To-Do Table Wrapper */
+.todo-table-wrapper {
+    max-height: 400px;
+    overflow-y: auto;
+    border-radius: 8px;
 }
 
-.summary-value.negative {
-    color: #f87171;
+.todo-table-wrapper::-webkit-scrollbar {
+    width: 8px;
+}
+
+.todo-table-wrapper::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.todo-table-wrapper::-webkit-scrollbar-thumb {
+    background: #10b981;
+    border-radius: 4px;
+}
+
+.todo-table-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #059669;
 }
