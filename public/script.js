@@ -58,6 +58,20 @@ function handleLogin(event) {
 }
 
 function handleLogout() {
+  // Firestore 리스너 해제
+  if (todosUnsubscribe) {
+    todosUnsubscribe();
+    todosUnsubscribe = null;
+  }
+  if (portfolioUnsubscribe) {
+    portfolioUnsubscribe();
+    portfolioUnsubscribe = null;
+  }
+
+  // 캐시 데이터 초기화
+  todosCache = [];
+  portfolioCache = [];
+
   auth.signOut().then(() => {
     sessionStorage.removeItem('loginRole');
     sessionStorage.removeItem('loginUser');
@@ -148,6 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 var todoSortKey = 'endDate';
 var todosCache = []; // Firestore 데이터 캐시
+var todosUnsubscribe = null; // Firestore 리스너 해제 함수
 
 function getTodos() {
   return todosCache;
@@ -161,7 +176,13 @@ function loadTodosFromFirestore() {
     return;
   }
 
-  db.collection('users').doc(uid).collection('todos')
+  // 기존 리스너가 있다면 해제
+  if (todosUnsubscribe) {
+    todosUnsubscribe();
+  }
+
+  // 새 리스너 등록
+  todosUnsubscribe = db.collection('users').doc(uid).collection('todos')
     .orderBy('endDate', 'asc')
     .onSnapshot((snapshot) => {
       todosCache = [];
@@ -171,7 +192,10 @@ function loadTodosFromFirestore() {
       renderTodos();
     }, (error) => {
       console.error('Error loading todos:', error);
-      alert('To-Do 목록 로드 실패: ' + error.message);
+      // 로그아웃 상태에서는 에러 무시
+      if (auth.currentUser) {
+        alert('To-Do 목록 로드 실패: ' + error.message);
+      }
     });
 }
 
@@ -300,6 +324,7 @@ var portfolioEditId = null;
 var portfolioSortKey = 'category';
 var portfolioSortAsc = true;
 var portfolioCache = []; // Firestore 데이터 캐시
+var portfolioUnsubscribe = null; // Firestore 리스너 해제 함수
 
 var portfolioSortLabels = {
   category: '구분', market: '시장', ticker: 'Ticker', name: '종목명',
@@ -343,7 +368,13 @@ function loadPortfolioFromFirestore() {
     return;
   }
 
-  db.collection('users').doc(uid).collection('portfolio')
+  // 기존 리스너가 있다면 해제
+  if (portfolioUnsubscribe) {
+    portfolioUnsubscribe();
+  }
+
+  // 새 리스너 등록
+  portfolioUnsubscribe = db.collection('users').doc(uid).collection('portfolio')
     .onSnapshot((snapshot) => {
       portfolioCache = [];
       snapshot.forEach((doc) => {
@@ -352,7 +383,10 @@ function loadPortfolioFromFirestore() {
       renderPortfolio();
     }, (error) => {
       console.error('Error loading portfolio:', error);
-      alert('Portfolio 로드 실패: ' + error.message);
+      // 로그아웃 상태에서는 에러 무시
+      if (auth.currentUser) {
+        alert('Portfolio 로드 실패: ' + error.message);
+      }
     });
 }
 
