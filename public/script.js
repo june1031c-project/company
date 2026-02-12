@@ -1,7 +1,23 @@
-// Login credentials
+// ========== Firebase 초기화 ==========
+const firebaseConfig = {
+  apiKey: "AIzaSyCpqpFe0FwnExJmEZSQJKUwWk1RdbO8CPI",
+  authDomain: "company-f4ef5.firebaseapp.com",
+  projectId: "company-f4ef5",
+  storageBucket: "company-f4ef5.firebasestorage.app",
+  messagingSenderId: "679888260857",
+  appId: "1:679888260857:web:2f742ead45d54d5dd7dc28",
+  measurementId: "G-VJ2XC1YZD7"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// Login credentials (아이디 → 이메일 + 역할 매핑)
 const USERS = {
-  'june1031c': { password: 'june1031c', role: 'admin', label: 'Admin' },
-  'ewp': { password: 'ewp', role: 'user', label: 'User' }
+  'june1031c': { email: 'june1031@gmail.com', password: 'june1031c', role: 'admin', label: 'Admin' },
+  'ewp': { email: 'ewp@gmail.com', password: 'ewpewp', role: 'user', label: 'User' }
 };
 
 function handleLogin(event) {
@@ -9,27 +25,53 @@ function handleLogin(event) {
   const id = document.getElementById('login-id').value.trim();
   const pw = document.getElementById('login-pw').value;
   const errorEl = document.getElementById('login-error');
+  const loginBtn = document.querySelector('.login-btn');
 
-  const user = USERS[id];
-  if (user && user.password === pw) {
-    sessionStorage.setItem('loginRole', user.role);
-    sessionStorage.setItem('loginUser', id);
-    errorEl.textContent = '';
-    initApp();
-  } else {
+  const userConfig = USERS[id];
+  if (!userConfig || userConfig.password !== pw) {
     errorEl.textContent = '아이디 또는 비밀번호가 올바르지 않습니다.';
+    return false;
   }
+
+  // Firebase Authentication 로그인
+  loginBtn.disabled = true;
+  loginBtn.textContent = '로그인 중...';
+  errorEl.textContent = '';
+
+  auth.signInWithEmailAndPassword(userConfig.email, pw)
+    .then((userCredential) => {
+      // 로그인 성공
+      const user = userCredential.user;
+      sessionStorage.setItem('loginRole', userConfig.role);
+      sessionStorage.setItem('loginUser', id);
+      sessionStorage.setItem('firebaseUid', user.uid);
+      initApp();
+    })
+    .catch((error) => {
+      console.error('Firebase Auth Error:', error);
+      errorEl.textContent = '로그인 실패: ' + error.message;
+      loginBtn.disabled = false;
+      loginBtn.textContent = '로그인';
+    });
+
   return false;
 }
 
 function handleLogout() {
-  sessionStorage.removeItem('loginRole');
-  sessionStorage.removeItem('loginUser');
-  document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('app-container').style.display = 'none';
-  document.body.classList.remove('readonly');
-  document.getElementById('login-id').value = '';
-  document.getElementById('login-pw').value = '';
+  auth.signOut().then(() => {
+    sessionStorage.removeItem('loginRole');
+    sessionStorage.removeItem('loginUser');
+    sessionStorage.removeItem('firebaseUid');
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('app-container').style.display = 'none';
+    document.body.classList.remove('readonly');
+    document.getElementById('login-id').value = '';
+    document.getElementById('login-pw').value = '';
+    document.querySelector('.login-btn').disabled = false;
+    document.querySelector('.login-btn').textContent = '로그인';
+  }).catch((error) => {
+    console.error('Logout error:', error);
+  });
 }
 
 function initApp() {
@@ -49,6 +91,10 @@ function initApp() {
   } else {
     document.body.classList.remove('readonly');
   }
+
+  // Load data from Firestore
+  loadTodos();
+  loadPortfolioFromFirestore();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -98,23 +144,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Show the dashboard section by default on load
   showSection('dashboard');
-
-  // To-Do functionality
-  loadTodos();
-
-  // Portfolio
-  renderPortfolio();
 });
 
 var todoSortKey = 'endDate';
+var todosCache = []; // Firestore 데이터 캐시
 
 function getTodos() {
-  const data = localStorage.getItem('todos');
-  return data ? JSON.parse(data) : [];
+  return todosCache;
 }
 
-function saveTodos(todos) {
-  localStorage.setItem('todos', JSON.stringify(todos));
+// Firestore에서 To-Do 목록 로드
+function loadTodosFromFirestore() {
+  const uid = sessionStorage.getItem('firebaseUid');
+  if (!uid) {
+    console.warn('User not logged in');
+    return;
+  }
+
+  db.collection('users').doc(uid).collection('todos')
+    .orderBy('endDate', 'asc')
+    .onSnapshot((snapshot) => {
+      todosCache = [];
+      snapshot.forEach((doc) => {
+        todosCache.push({ id: doc.id, ...doc.data() });
+      });
+      renderTodos();
+    }, (error) => {
+      console.error('Error loading todos:', error);
+      alert('To-Do 목록 로드 실패: ' + error.message);
+    });
 }
 
 function sortTodos(field) {
@@ -126,11 +184,11 @@ function renderTodos() {
   const tbody = document.getElementById('todo-tbody');
   const todos = getTodos();
 
-  // Build indexed list to keep original index for delete/toggle
-  var sorted = todos.map(function(todo, i) { return { todo: todo, origIndex: i }; });
+  // Build sorted list
+  var sorted = todos.map(function(todo) { return todo; });
   sorted.sort(function(a, b) {
-    var va = a.todo[todoSortKey] || '';
-    var vb = b.todo[todoSortKey] || '';
+    var va = a[todoSortKey] || '';
+    var vb = b[todoSortKey] || '';
     if (va === '-') va = '';
     if (vb === '-') vb = '';
     return va.localeCompare(vb);
@@ -143,9 +201,7 @@ function renderTodos() {
   thEnd.textContent = '완료일자' + (todoSortKey === 'endDate' ? ' ▼' : '');
 
   tbody.innerHTML = '';
-  sorted.forEach(function(item, displayIndex) {
-    var todo = item.todo;
-    var origIndex = item.origIndex;
+  sorted.forEach(function(todo, displayIndex) {
     var tr = document.createElement('tr');
     if (todo.completed) {
       tr.classList.add('completed');
@@ -155,8 +211,8 @@ function renderTodos() {
       '<td>' + todo.startDate + '</td>' +
       '<td>' + todo.endDate + '</td>' +
       '<td>' + escapeHtml(todo.detail) + '</td>' +
-      '<td><input type="checkbox" ' + (todo.completed ? 'checked' : '') + ' onchange="toggleComplete(' + origIndex + ')" /></td>' +
-      '<td><button class="todo-delete-btn" onclick="deleteTodo(' + origIndex + ')">삭제</button></td>';
+      '<td><input type="checkbox" ' + (todo.completed ? 'checked' : '') + ' onchange="toggleComplete(\'' + todo.id + '\')" /></td>' +
+      '<td><button class="todo-delete-btn" onclick="deleteTodo(\'' + todo.id + '\')">삭제</button></td>';
     tbody.appendChild(tr);
   });
 }
@@ -177,45 +233,73 @@ function addTodo() {
     return;
   }
 
-  const todos = getTodos();
-  todos.push({
+  const uid = sessionStorage.getItem('firebaseUid');
+  if (!uid) {
+    alert('로그인이 필요합니다.');
+    return;
+  }
+
+  // Firestore에 추가
+  db.collection('users').doc(uid).collection('todos').add({
     startDate: startDate || '-',
     endDate: endDate || '-',
     detail: detail,
-    completed: false
+    completed: false,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(() => {
+    // Clear inputs
+    document.getElementById('todo-start-date').value = '';
+    document.getElementById('todo-end-date').value = '';
+    document.getElementById('todo-detail').value = '';
+  }).catch((error) => {
+    console.error('Error adding todo:', error);
+    alert('To-Do 추가 실패: ' + error.message);
   });
-  saveTodos(todos);
-  renderTodos();
-
-  // Clear inputs
-  document.getElementById('todo-start-date').value = '';
-  document.getElementById('todo-end-date').value = '';
-  document.getElementById('todo-detail').value = '';
 }
 
-function deleteTodo(index) {
-  const todos = getTodos();
-  todos.splice(index, 1);
-  saveTodos(todos);
-  renderTodos();
+function deleteTodo(todoId) {
+  const uid = sessionStorage.getItem('firebaseUid');
+  if (!uid) return;
+
+  if (!confirm('삭제하시겠습니까?')) return;
+
+  db.collection('users').doc(uid).collection('todos').doc(todoId).delete()
+    .catch((error) => {
+      console.error('Error deleting todo:', error);
+      alert('To-Do 삭제 실패: ' + error.message);
+    });
 }
 
-function toggleComplete(index) {
-  const todos = getTodos();
-  todos[index].completed = !todos[index].completed;
-  saveTodos(todos);
-  renderTodos();
+function toggleComplete(todoId) {
+  const uid = sessionStorage.getItem('firebaseUid');
+  if (!uid) return;
+
+  const todo = todosCache.find(t => t.id === todoId);
+  if (!todo) return;
+
+  db.collection('users').doc(uid).collection('todos').doc(todoId).update({
+    completed: !todo.completed
+  }).catch((error) => {
+    console.error('Error toggling todo:', error);
+    alert('To-Do 업데이트 실패: ' + error.message);
+  });
 }
 
 function loadTodos() {
-  renderTodos();
+  const uid = sessionStorage.getItem('firebaseUid');
+  if (uid) {
+    loadTodosFromFirestore();
+  } else {
+    renderTodos();
+  }
 }
 
 // ========== Portfolio ==========
 const EODHD_PROXY_FUNCTION_URL = 'https://us-central1-company-f4ef5.cloudfunctions.net/proxyEODHD';
-var portfolioEditIndex = -1;
+var portfolioEditId = null;
 var portfolioSortKey = 'category';
 var portfolioSortAsc = true;
+var portfolioCache = []; // Firestore 데이터 캐시
 
 var portfolioSortLabels = {
   category: '구분', market: '시장', ticker: 'Ticker', name: '종목명',
@@ -248,22 +332,28 @@ function toggleAssetFields() {
 }
 
 function getPortfolio() {
-  var dataStr = localStorage.getItem('portfolio');
-  var items = dataStr ? JSON.parse(dataStr) : [];
-
-  // One-time migration for old data
-  if (items.length > 0 && items[0].itemType === undefined) {
-    items.forEach(function(item) {
-      item.itemType = 'stock';
-    });
-    savePortfolio(items);
-  }
-
-  return items;
+  return portfolioCache;
 }
 
-function savePortfolio(items) {
-  localStorage.setItem('portfolio', JSON.stringify(items));
+// Firestore에서 Portfolio 로드
+function loadPortfolioFromFirestore() {
+  const uid = sessionStorage.getItem('firebaseUid');
+  if (!uid) {
+    console.warn('User not logged in');
+    return;
+  }
+
+  db.collection('users').doc(uid).collection('portfolio')
+    .onSnapshot((snapshot) => {
+      portfolioCache = [];
+      snapshot.forEach((doc) => {
+        portfolioCache.push({ id: doc.id, ...doc.data() });
+      });
+      renderPortfolio();
+    }, (error) => {
+      console.error('Error loading portfolio:', error);
+      alert('Portfolio 로드 실패: ' + error.message);
+    });
 }
 
 function formatKRW(num) {
@@ -307,10 +397,10 @@ function renderPortfolio() {
   tbody.innerHTML = '';
   tfoot.innerHTML = '';
 
-  // Build sorted indexed list
-  var sorted = items.map(function(item, i) {
+  // Build sorted list
+  var sorted = items.map(function(item) {
     var calc = calcPortfolioItem(item);
-    return { item: item, origIndex: i, evalValue: calc.evalValue, profit: calc.profit, profitRate: calc.profitRate };
+    return { item: item, evalValue: calc.evalValue, profit: calc.profit, profitRate: calc.profitRate };
   });
 
   sorted.sort(function(a, b) {
@@ -354,7 +444,6 @@ function renderPortfolio() {
 
   sorted.forEach(function(entry, displayIndex) {
     var item = entry.item;
-    var origIndex = entry.origIndex;
     var calc = calcPortfolioItem(item);
     var currentVal = calc.evalValue;
     var costVal = calc.costVal;
@@ -385,8 +474,8 @@ function renderPortfolio() {
         '<td colspan="2">-</td>' +
         '<td>' + formatKRW(currentVal) + '</td>' +
         '<td colspan="2">-</td>' +
-        '<td><button class="portfolio-edit-btn" onclick="editPortfolio(' + origIndex + ')">수정</button></td>' +
-        '<td><button class="portfolio-delete-btn" onclick="deletePortfolio(' + origIndex + ')">삭제</button></td>';
+        '<td><button class="portfolio-edit-btn" onclick="editPortfolio(\'' + item.id + '\')">수정</button></td>' +
+        '<td><button class="portfolio-delete-btn" onclick="deletePortfolio(\'' + item.id + '\')">삭제</button></td>';
     } else {
       // Render stock row
       var hasPrice = item.currentPrice != null && item.currentPrice > 0;
@@ -417,8 +506,8 @@ function renderPortfolio() {
         '<td>' + (hasPrice ? formatKRW(currentVal) : '-') + '</td>' +
         '<td class="' + profitClass + '">' + (hasPrice ? profitSign + formatKRW(profit) : '-') + '</td>' +
         '<td class="' + profitClass + '">' + (hasPrice ? profitSign + profitRate.toFixed(2) + '%' : '-') + '</td>' +
-        '<td><button class="portfolio-edit-btn" onclick="editPortfolio(' + origIndex + ')">수정</button></td>' +
-        '<td><button class="portfolio-delete-btn" onclick="deletePortfolio(' + origIndex + ')">삭제</button></td>';
+        '<td><button class="portfolio-edit-btn" onclick="editPortfolio(\'' + item.id + '\')">수정</button></td>' +
+        '<td><button class="portfolio-delete-btn" onclick="deletePortfolio(\'' + item.id + '\')">삭제</button></td>';
     }
 
     tbody.appendChild(tr);
@@ -444,7 +533,12 @@ function renderPortfolio() {
 function addAsset() {
   var assetType = document.getElementById('asset-type').value;
   var category = document.getElementById('portfolio-category').value.trim();
-  var items = getPortfolio();
+  const uid = sessionStorage.getItem('firebaseUid');
+
+  if (!uid) {
+    alert('로그인이 필요합니다.');
+    return;
+  }
 
   if (assetType === 'stock') {
     var market = document.getElementById('portfolio-market').value;
@@ -457,36 +551,43 @@ function addAsset() {
     if (!buyPrice || buyPrice <= 0) { alert('매수가를 입력해주세요.'); return; }
     if (!quantity || quantity <= 0) { alert('수량을 입력해주세요.'); return; }
 
-    if (portfolioEditIndex >= 0 && items[portfolioEditIndex].itemType === 'stock') {
+    var stockData = {
+      itemType: 'stock',
+      category: category || '-',
+      market: market,
+      ticker: ticker,
+      name: manualName || null,
+      buyPrice: buyPrice,
+      quantity: Math.round(quantity * 100) / 100,
+      currentPrice: null,
+      exchangeRate: null
+    };
+
+    if (portfolioEditId) {
       // Edit existing stock
-      items[portfolioEditIndex].category = category || '-';
-      items[portfolioEditIndex].market = market;
-      items[portfolioEditIndex].ticker = ticker;
-      if (manualName) items[portfolioEditIndex].name = manualName;
-      items[portfolioEditIndex].buyPrice = buyPrice;
-      items[portfolioEditIndex].quantity = Math.round(quantity * 100) / 100;
-      portfolioEditIndex = -1;
-      document.querySelector('.portfolio-form .todo-add-btn').textContent = '추가';
-      var cancelBtn = document.getElementById('portfolio-cancel-btn');
-      if (cancelBtn) cancelBtn.remove();
+      db.collection('users').doc(uid).collection('portfolio').doc(portfolioEditId).update(stockData)
+        .then(() => {
+          portfolioEditId = null;
+          document.querySelector('.portfolio-form .todo-add-btn').textContent = '추가';
+          var cancelBtn = document.getElementById('portfolio-cancel-btn');
+          if (cancelBtn) cancelBtn.remove();
+          clearAssetForm();
+        })
+        .catch((error) => {
+          console.error('Error updating stock:', error);
+          alert('주식 수정 실패: ' + error.message);
+        });
     } else {
       // Add new stock
-      items.push({
-        itemType: 'stock',
-        category: category || '-',
-        market: market,
-        ticker: ticker,
-        name: manualName || null,
-        buyPrice: buyPrice,
-        quantity: Math.round(quantity * 100) / 100,
-        currentPrice: null,
-        exchangeRate: null
-      });
+      db.collection('users').doc(uid).collection('portfolio').add(stockData)
+        .then(() => {
+          clearAssetForm();
+        })
+        .catch((error) => {
+          console.error('Error adding stock:', error);
+          alert('주식 추가 실패: ' + error.message);
+        });
     }
-
-    savePortfolio(items);
-    renderPortfolio();
-    clearAssetForm();
   } else if (assetType === 'cash') {
     var currency = document.getElementById('cash-currency').value;
     var amount = parseFloat(document.getElementById('cash-amount').value);
@@ -496,29 +597,39 @@ function addAsset() {
       return;
     }
 
-    if (portfolioEditIndex >= 0 && items[portfolioEditIndex].itemType === 'cash') {
+    var cashData = {
+      itemType: 'cash',
+      category: category || '-',
+      currency: currency,
+      amount: amount,
+      exchangeRate: null
+    };
+
+    if (portfolioEditId) {
       // Edit existing cash
-      items[portfolioEditIndex].category = category || '-';
-      items[portfolioEditIndex].currency = currency;
-      items[portfolioEditIndex].amount = amount;
-      portfolioEditIndex = -1;
-      document.querySelector('.portfolio-form .todo-add-btn').textContent = '추가';
-      var cancelBtn = document.getElementById('portfolio-cancel-btn');
-      if (cancelBtn) cancelBtn.remove();
+      db.collection('users').doc(uid).collection('portfolio').doc(portfolioEditId).update(cashData)
+        .then(() => {
+          portfolioEditId = null;
+          document.querySelector('.portfolio-form .todo-add-btn').textContent = '추가';
+          var cancelBtn = document.getElementById('portfolio-cancel-btn');
+          if (cancelBtn) cancelBtn.remove();
+          clearAssetForm();
+        })
+        .catch((error) => {
+          console.error('Error updating cash:', error);
+          alert('예수금 수정 실패: ' + error.message);
+        });
     } else {
       // Add new cash
-      items.push({
-        itemType: 'cash',
-        category: category || '-',
-        currency: currency,
-        amount: amount,
-        exchangeRate: null
-      });
+      db.collection('users').doc(uid).collection('portfolio').add(cashData)
+        .then(() => {
+          clearAssetForm();
+        })
+        .catch((error) => {
+          console.error('Error adding cash:', error);
+          alert('예수금 추가 실패: ' + error.message);
+        });
     }
-
-    savePortfolio(items);
-    renderPortfolio();
-    clearAssetForm();
   }
 }
 
@@ -535,10 +646,12 @@ function clearAssetForm() {
   toggleAssetFields();
 }
 
-function editPortfolio(index) {
+function editPortfolio(itemId) {
   var items = getPortfolio();
-  var item = items[index];
-  portfolioEditIndex = index;
+  var item = items.find(i => i.id === itemId);
+  if (!item) return;
+
+  portfolioEditId = itemId;
 
   // Set asset type
   document.getElementById('asset-type').value = item.itemType;
@@ -575,21 +688,33 @@ function editPortfolio(index) {
 }
 
 function cancelEditPortfolio() {
-  portfolioEditIndex = -1;
+  portfolioEditId = null;
   clearAssetForm();
   document.querySelector('.portfolio-form .todo-add-btn').textContent = '추가';
   var cancelBtn = document.getElementById('portfolio-cancel-btn');
   if (cancelBtn) cancelBtn.remove();
 }
 
-function deletePortfolio(index) {
-  var items = getPortfolio();
-  items.splice(index, 1);
-  savePortfolio(items);
-  renderPortfolio();
+function deletePortfolio(itemId) {
+  const uid = sessionStorage.getItem('firebaseUid');
+  if (!uid) return;
+
+  if (!confirm('삭제하시겠습니까?')) return;
+
+  db.collection('users').doc(uid).collection('portfolio').doc(itemId).delete()
+    .catch((error) => {
+      console.error('Error deleting portfolio item:', error);
+      alert('삭제 실패: ' + error.message);
+    });
 }
 
 function refreshPortfolio() {
+  const uid = sessionStorage.getItem('firebaseUid');
+  if (!uid) {
+    alert('로그인이 필요합니다.');
+    return;
+  }
+
   var items = getPortfolio();
   var stockItems = items.filter(function(item) { return item.itemType === 'stock'; });
 
@@ -604,12 +729,19 @@ function refreshPortfolio() {
 
   var hasUS = stockItems.some(function(item) { return item.market === 'US'; });
 
+  // Remove 'id' field before sending to API
+  var stockItemsForAPI = stockItems.map(function(item) {
+    var copy = { ...item };
+    delete copy.id;
+    return copy;
+  });
+
   fetch(EODHD_PROXY_FUNCTION_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ items: stockItems, hasUS: hasUS }),
+    body: JSON.stringify({ items: stockItemsForAPI, hasUS: hasUS }),
   })
     .then(function(response) {
       if (!response.ok) {
@@ -620,34 +752,40 @@ function refreshPortfolio() {
     .then(function(data) {
       const { updatedItems, exchangeRate } = data;
 
-      // Merge updated stock items back into full portfolio
+      // Update Firestore with new prices
+      var batch = db.batch();
       var stockIndex = 0;
-      items = items.map(function(item) {
+
+      items.forEach(function(item) {
+        var docRef = db.collection('users').doc(uid).collection('portfolio').doc(item.id);
+
         if (item.itemType === 'stock') {
-          return updatedItems[stockIndex++];
+          var updated = updatedItems[stockIndex++];
+          batch.update(docRef, {
+            currentPrice: updated.currentPrice,
+            exchangeRate: updated.exchangeRate,
+            name: updated.name || item.name
+          });
         } else if (item.itemType === 'cash' && item.currency === 'USD') {
           // Update USD cash exchange rate
-          return { ...item, exchangeRate: exchangeRate };
-        } else {
-          return item;
+          batch.update(docRef, { exchangeRate: exchangeRate });
         }
       });
 
-      savePortfolio(items);
-      renderPortfolio();
+      return batch.commit().then(function() {
+        var infoEl = document.getElementById('portfolio-rate-info');
+        var now = new Date();
+        var timeStr = now.getFullYear() + '-' +
+          String(now.getMonth() + 1).padStart(2, '0') + '-' +
+          String(now.getDate()).padStart(2, '0') + ' ' +
+          String(now.getHours()).padStart(2, '0') + ':' +
+          String(now.getMinutes()).padStart(2, '0');
+        var rateText = hasUS ? '환율: ' + formatKRW(exchangeRate) + '원/$  |  ' : '';
+        infoEl.textContent = rateText + timeStr + ' 업데이트';
 
-      var infoEl = document.getElementById('portfolio-rate-info');
-      var now = new Date();
-      var timeStr = now.getFullYear() + '-' +
-        String(now.getMonth() + 1).padStart(2, '0') + '-' +
-        String(now.getDate()).padStart(2, '0') + ' ' +
-        String(now.getHours()).padStart(2, '0') + ':' +
-        String(now.getMinutes()).padStart(2, '0');
-      var rateText = hasUS ? '환율: ' + formatKRW(exchangeRate) + '원/$  |  ' : '';
-      infoEl.textContent = rateText + timeStr + ' 업데이트';
-
-      btn.disabled = false;
-      btn.textContent = '🔄 시세 업데이트';
+        btn.disabled = false;
+        btn.textContent = '🔄 시세 업데이트';
+      });
     })
     .catch(function(err) {
       alert('시세 조회 실패: ' + err.message);
