@@ -481,17 +481,35 @@ function calcPortfolioItem(item) {
   }
 }
 
+function isEtfItem(item) {
+  var ticker = (item.ticker || '').toUpperCase();
+  var name = (item.name || '').toUpperCase();
+  var category = (item.category || '').toUpperCase();
+  return ticker.indexOf('ETF') >= 0 || name.indexOf('ETF') >= 0 || category.indexOf('ETF') >= 0;
+}
+
+function isCommodityEtf(item) {
+  var text = ((item.ticker || '') + ' ' + (item.name || '') + ' ' + (item.category || '')).toUpperCase();
+  var commodityKeywords = [
+    'COMMODITY', 'GOLD', 'SILVER', 'COPPER', 'OIL', 'WTI', 'BRENT', 'GAS',
+    '원자재', '원물', '금', '은', '구리', '원유', '천연가스'
+  ];
+  return commodityKeywords.some(function(keyword) {
+    return text.indexOf(keyword) >= 0;
+  });
+}
+
 function getAssetTypeLabel(item) {
   if (item.itemType === 'cash') {
     return '예수금';
   }
 
-  var ticker = (item.ticker || '').toUpperCase();
-  var name = (item.name || '').toUpperCase();
-  var category = (item.category || '').toUpperCase();
-  var isEtf = ticker.indexOf('ETF') >= 0 || name.indexOf('ETF') >= 0 || category.indexOf('ETF') >= 0;
-
-  if (isEtf) return 'ETF';
+  if (isEtfItem(item)) {
+    if (isCommodityEtf(item)) return '원자재 ETF';
+    if (item.market === 'KR') return '한국 ETF';
+    if (item.market === 'US') return '미국 ETF';
+    return '기타 ETF';
+  }
   if (item.market === 'KR') return '한국주식';
   if (item.market === 'US') return '미국주식';
   return '기타주식';
@@ -531,12 +549,60 @@ function renderAllocationList(container, groupedData, totalValue) {
   }).join('');
 }
 
+function renderAllocationPie(container, groupedData, totalValue) {
+  if (!container) return;
+
+  var entries = Object.keys(groupedData).map(function(label) {
+    return { label: label, value: groupedData[label] };
+  }).filter(function(entry) {
+    return entry.value > 0;
+  }).sort(function(a, b) {
+    return b.value - a.value;
+  });
+
+  if (entries.length === 0 || totalValue <= 0) {
+    container.innerHTML = '<div class="allocation-empty">원차트 데이터가 없습니다.</div>';
+    return;
+  }
+
+  var colorPalette = ['#1e88e5', '#26a69a', '#f59e0b', '#ef5350', '#7e57c2', '#8d6e63', '#42a5f5', '#66bb6a'];
+  var gradientParts = [];
+  var cursor = 0;
+
+  entries.forEach(function(entry, index) {
+    var ratio = (entry.value / totalValue) * 100;
+    var next = cursor + ratio;
+    var color = colorPalette[index % colorPalette.length];
+    gradientParts.push(color + ' ' + cursor.toFixed(2) + '% ' + next.toFixed(2) + '%');
+    entry.ratio = ratio;
+    entry.color = color;
+    cursor = next;
+  });
+
+  var legendHtml = entries.map(function(entry) {
+    return (
+      '<div class="allocation-legend-item">' +
+        '<div class="allocation-legend-left">' +
+          '<span class="allocation-dot" style="background:' + entry.color + ';"></span>' +
+          '<span>' + escapeHtml(entry.label) + '</span>' +
+        '</div>' +
+        '<span class="allocation-value">' + entry.ratio.toFixed(1) + '%</span>' +
+      '</div>'
+    );
+  }).join('');
+
+  container.innerHTML =
+    '<div class="allocation-pie" style="background:conic-gradient(' + gradientParts.join(', ') + ');"></div>' +
+    '<div class="allocation-legend">' + legendHtml + '</div>';
+}
+
 function renderAssetAllocationByGroups(groupByBroker, groupByType, totalValue, usedCostFallback) {
   var brokerEl = document.getElementById('allocation-broker-list');
   var typeEl = document.getElementById('allocation-type-list');
+  var pieWrapEl = document.getElementById('allocation-pie-wrap');
   var summaryEl = document.getElementById('allocation-summary');
 
-  if (!brokerEl || !typeEl || !summaryEl) return;
+  if (!brokerEl || !typeEl || !pieWrapEl || !summaryEl) return;
 
   if (totalValue > 0) {
     summaryEl.textContent = '총 평가금 ' + formatKRW(totalValue) + '원 기준 점유율입니다.'
@@ -547,6 +613,7 @@ function renderAssetAllocationByGroups(groupByBroker, groupByType, totalValue, u
 
   renderAllocationList(brokerEl, groupByBroker, totalValue);
   renderAllocationList(typeEl, groupByType, totalValue);
+  renderAllocationPie(pieWrapEl, groupByType, totalValue);
 }
 
 function renderPortfolio() {

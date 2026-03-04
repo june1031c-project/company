@@ -1182,10 +1182,59 @@ body.readonly .portfolio-table td:nth-last-child(-n+2) {
     padding: 12px;
 }
 
+.allocation-panel-chart {
+    grid-column: 1 / -1;
+}
+
 .allocation-panel h4 {
     margin: 0 0 10px;
     font-size: 14px;
     color: #333;
+}
+
+.allocation-pie-wrap {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+}
+
+.allocation-pie {
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    border: 1px solid #e4e4e4;
+    flex: 0 0 auto;
+}
+
+.allocation-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 220px;
+}
+
+.allocation-legend-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 13px;
+}
+
+.allocation-legend-left {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: #333;
+}
+
+.allocation-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    flex: 0 0 auto;
 }
 
 .allocation-list {
@@ -1240,5 +1289,10 @@ body.readonly .portfolio-table td:nth-last-child(-n+2) {
 @media (max-width: 768px) {
     .allocation-grid {
         grid-template-columns: 1fr;
+    }
+
+    .allocation-pie {
+        width: 150px;
+        height: 150px;
     }
 }
