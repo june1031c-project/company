@@ -481,6 +481,74 @@ function calcPortfolioItem(item) {
   }
 }
 
+function getAssetTypeLabel(item) {
+  if (item.itemType === 'cash') {
+    return '예수금';
+  }
+
+  var ticker = (item.ticker || '').toUpperCase();
+  var name = (item.name || '').toUpperCase();
+  var category = (item.category || '').toUpperCase();
+  var isEtf = ticker.indexOf('ETF') >= 0 || name.indexOf('ETF') >= 0 || category.indexOf('ETF') >= 0;
+
+  if (isEtf) return 'ETF';
+  if (item.market === 'KR') return '한국주식';
+  if (item.market === 'US') return '미국주식';
+  return '기타주식';
+}
+
+function addAllocation(map, key, value) {
+  var label = (key || '').trim() || '미분류';
+  map[label] = (map[label] || 0) + value;
+}
+
+function renderAllocationList(container, groupedData, totalValue) {
+  if (!container) return;
+
+  var entries = Object.keys(groupedData).map(function(label) {
+    return { label: label, value: groupedData[label] };
+  }).sort(function(a, b) {
+    return b.value - a.value;
+  });
+
+  if (entries.length === 0 || totalValue <= 0) {
+    container.innerHTML = '<div class="allocation-empty">데이터가 없습니다.</div>';
+    return;
+  }
+
+  container.innerHTML = entries.map(function(entry) {
+    var ratio = (entry.value / totalValue) * 100;
+    var safeRatio = Math.min(Math.max(ratio, 0), 100);
+    return (
+      '<div class="allocation-item">' +
+        '<div class="allocation-head">' +
+          '<span class="allocation-label">' + escapeHtml(entry.label) + '</span>' +
+          '<span class="allocation-value">' + formatKRW(entry.value) + '원 (' + ratio.toFixed(1) + '%)</span>' +
+        '</div>' +
+        '<div class="allocation-track"><div class="allocation-fill" style="width:' + safeRatio.toFixed(2) + '%"></div></div>' +
+      '</div>'
+    );
+  }).join('');
+}
+
+function renderAssetAllocationByGroups(groupByBroker, groupByType, totalValue, usedCostFallback) {
+  var brokerEl = document.getElementById('allocation-broker-list');
+  var typeEl = document.getElementById('allocation-type-list');
+  var summaryEl = document.getElementById('allocation-summary');
+
+  if (!brokerEl || !typeEl || !summaryEl) return;
+
+  if (totalValue > 0) {
+    summaryEl.textContent = '총 평가금 ' + formatKRW(totalValue) + '원 기준 점유율입니다.'
+      + (usedCostFallback ? ' (현재가 미보유 종목은 매수가 기준 반영)' : '');
+  } else {
+    summaryEl.textContent = '총 평가금 기준 점유율입니다.';
+  }
+
+  renderAllocationList(brokerEl, groupByBroker, totalValue);
+  renderAllocationList(typeEl, groupByType, totalValue);
+}
+
 function renderPortfolio() {
   var tbody = document.getElementById('portfolio-tbody');
   var tfoot = document.getElementById('portfolio-tfoot');
@@ -532,6 +600,10 @@ function renderPortfolio() {
 
   var totalCost = 0;
   var totalValue = 0;
+  var allocationTotal = 0;
+  var allocationByBroker = {};
+  var allocationByType = {};
+  var usedCostFallback = false;
 
   sorted.forEach(function(entry, displayIndex) {
     var item = entry.item;
@@ -547,6 +619,12 @@ function renderPortfolio() {
       // Render cash row
       totalCost += costVal;
       totalValue += currentVal;
+
+      if (currentVal > 0) {
+        allocationTotal += currentVal;
+        addAllocation(allocationByBroker, item.category || '미분류', currentVal);
+        addAllocation(allocationByType, getAssetTypeLabel(item), currentVal);
+      }
 
       var currency = item.currency === 'USD' ? '$' : '₩';
       var amountDisplay = item.currency === 'USD'
@@ -574,6 +652,14 @@ function renderPortfolio() {
 
       totalCost += costVal;
       if (hasPrice) totalValue += currentVal;
+
+      var allocationValue = hasPrice ? currentVal : costVal;
+      if (allocationValue > 0) {
+        allocationTotal += allocationValue;
+        addAllocation(allocationByBroker, item.category || '미분류', allocationValue);
+        addAllocation(allocationByType, getAssetTypeLabel(item), allocationValue);
+        if (!hasPrice) usedCostFallback = true;
+      }
 
       var profitClass = profit >= 0 ? 'positive' : 'negative';
       var profitSign = profit >= 0 ? '+' : '';
@@ -621,9 +707,11 @@ function renderPortfolio() {
 
     // Dashboard 위젯 업데이트
     updateDashboardPortfolio(totalValue, totalProfit, totalRate);
+    renderAssetAllocationByGroups(allocationByBroker, allocationByType, allocationTotal, usedCostFallback);
   } else {
     // 데이터가 없을 때 Dashboard 초기화
     updateDashboardPortfolio(0, 0, 0);
+    renderAssetAllocationByGroups({}, {}, 0, false);
   }
 }
 
