@@ -406,17 +406,23 @@ td.negative {
     border: none;
     border-radius: 8px;
     font-family: inherit;
+    font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s ease;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
 }
 
 .todo-add-btn:hover {
     background: #059669;
+    box-shadow: 0 4px 8px rgba(16, 185, 129, 0.4);
+    transform: translateY(-1px);
 }
 
 .todo-add-btn:active {
     background: #047857;
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(16, 185, 129, 0.3);
 }
 
 .todo-table {
@@ -615,40 +621,65 @@ body.readonly .todo-table td:nth-child(6) {
 
 .portfolio-rate-info {
     font-size: 13px;
-    color: #666;
+    color: #495057;
+    font-weight: 500;
+    padding: 6px 12px;
+    background: #e3f2fd;
+    border-radius: 6px;
 }
 
 .portfolio-refresh-btn {
-    padding: 6px 14px;
-    background-color: #1976D2;
+    padding: 8px 16px;
+    background-color: #1e88e5;
     color: #fff;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     font-family: inherit;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.2s ease;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(30, 136, 229, 0.3);
 }
 
 .portfolio-refresh-btn:hover {
-    background-color: #1565C0;
+    background-color: #1565c0;
+    box-shadow: 0 4px 8px rgba(30, 136, 229, 0.4);
+    transform: translateY(-1px);
+}
+
+.portfolio-refresh-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(30, 136, 229, 0.3);
 }
 
 .portfolio-form {
     display: flex;
     gap: 10px;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
     flex-wrap: wrap;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    border: 2px solid #e9ecef;
 }
 
 .portfolio-form input,
 .portfolio-form select {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
+    padding: 10px 14px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
     font-family: inherit;
     font-size: 14px;
+    background: white;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.portfolio-form input:focus,
+.portfolio-form select:focus {
+    outline: none;
+    border-color: #1e88e5;
+    box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.1);
 }
 
 .portfolio-form input[type="text"] {
@@ -661,26 +692,79 @@ body.readonly .todo-table td:nth-child(6) {
 
 .portfolio-table-wrap {
     overflow-x: auto;
+    max-height: 500px;
+    overflow-y: auto;
+    border-radius: 8px;
+    margin-top: 15px;
+}
+
+.portfolio-table-wrap::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.portfolio-table-wrap::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.portfolio-table-wrap::-webkit-scrollbar-thumb {
+    background: #7c3aed;
+    border-radius: 4px;
+}
+
+.portfolio-table-wrap::-webkit-scrollbar-thumb:hover {
+    background: #6d28d9;
 }
 
 .portfolio-table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 10px;
+    margin-top: 0;
     white-space: nowrap;
+}
+
+.portfolio-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 .portfolio-table th,
 .portfolio-table td {
-    padding: 8px;
+    padding: 10px 8px;
     border: 1px solid #eee;
     text-align: right;
 }
 
 .portfolio-table th {
-    background-color: #f8f8f8;
+    background-color: #1e88e5;
+    color: #ffffff;
     font-weight: 600;
     text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.portfolio-table th.sortable-th {
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s ease;
+}
+
+.portfolio-table th.sortable-th:hover {
+    background-color: #1565c0;
+}
+
+.portfolio-table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.portfolio-table tbody tr:nth-child(even) {
+    background-color: #f8f9fa;
+}
+
+.portfolio-table tbody tr:hover {
+    background-color: #e3f2fd;
 }
 
 .portfolio-table td:nth-child(1),
@@ -695,55 +779,70 @@ body.readonly .todo-table td:nth-child(6) {
     text-align: center;
 }
 
+.portfolio-table tfoot {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+}
+
 .portfolio-table tfoot td {
     font-weight: 700;
-    background-color: #f8f8f8;
+    background-color: #e3f2fd;
+    color: #1565c0;
+    border-top: 3px solid #1e88e5;
+    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .portfolio-edit-btn {
-    padding: 4px 12px;
-    background-color: #FF9800;
-    color: #fff;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 13px;
-    transition: background-color 0.2s ease;
-}
-
-.portfolio-edit-btn:hover {
-    background-color: #F57C00;
-}
-
-.portfolio-cancel-btn {
-    padding: 8px 20px;
-    background-color: #666;
+    padding: 6px 14px;
+    background-color: #fb8c00;
     color: #fff;
     border: none;
     border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.portfolio-edit-btn:hover {
+    background-color: #f57c00;
+    transform: scale(1.05);
+}
+
+.portfolio-cancel-btn {
+    padding: 10px 24px;
+    background-color: #78909c;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
     font-family: inherit;
+    font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.2s ease;
+    transition: all 0.2s ease;
 }
 
 .portfolio-cancel-btn:hover {
-    background-color: #444;
+    background-color: #607d8b;
+    transform: translateY(-1px);
 }
 
 .portfolio-delete-btn {
-    padding: 4px 12px;
-    background-color: #dc3545;
+    padding: 6px 14px;
+    background-color: #ef5350;
     color: #fff;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 13px;
-    transition: background-color 0.2s ease;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.2s ease;
 }
 
 .portfolio-delete-btn:hover {
-    background-color: #c82333;
+    background-color: #e53935;
+    transform: scale(1.05);
 }
 
 body.readonly .portfolio-form {
@@ -1016,8 +1115,18 @@ body.readonly .portfolio-table td:nth-last-child(-n+2) {
 
     .portfolio-table th,
     .portfolio-table td {
-        padding: 8px 5px;
-        font-size: 11px;
+        padding: 8px 4px;
+        font-size: 10px;
+    }
+
+    .portfolio-form {
+        padding: 12px;
+    }
+
+    .portfolio-form input,
+    .portfolio-form select {
+        font-size: 13px;
+        padding: 8px 10px;
     }
 
     /* Portfolio form adjustments */
@@ -1164,15 +1273,20 @@ body.readonly .portfolio-table td:nth-last-child(-n+2) {
 }
 
 .allocation-summary {
-    margin: 0 0 14px;
-    font-size: 13px;
-    color: #666;
+    margin: 0 0 20px;
+    font-size: 14px;
+    color: #6c757d;
+    font-weight: 500;
+    padding: 12px 16px;
+    background: #f8f9fa;
+    border-left: 4px solid #7c3aed;
+    border-radius: 8px;
 }
 
 .allocation-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px;
+    gap: 18px;
 }
 
 .allocation-panel {
@@ -1184,6 +1298,7 @@ body.readonly .portfolio-table td:nth-last-child(-n+2) {
 
 .allocation-panel-chart {
     grid-column: 1 / -1;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
 }
 
 .allocation-panel h4 {
@@ -1210,31 +1325,41 @@ body.readonly .portfolio-table td:nth-last-child(-n+2) {
 .allocation-legend {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    min-width: 220px;
+    gap: 10px;
+    min-width: 240px;
 }
 
 .allocation-legend-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
-    font-size: 13px;
+    gap: 12px;
+    font-size: 14px;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+}
+
+.allocation-legend-item:hover {
+    background: #e9ecef;
 }
 
 .allocation-legend-left {
     display: inline-flex;
     align-items: center;
-    gap: 7px;
+    gap: 10px;
     color: #333;
+    font-weight: 500;
 }
 
 .allocation-dot {
-    width: 10px;
-    height: 10px;
+    width: 14px;
+    height: 14px;
     border-radius: 50%;
     display: inline-block;
     flex: 0 0 auto;
+    border: 2px solid rgba(255, 255, 255, 0.3);
 }
 
 .allocation-list {
@@ -1246,44 +1371,59 @@ body.readonly .portfolio-table td:nth-last-child(-n+2) {
 .allocation-item {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.allocation-item:hover {
+    background: #e9ecef;
+    transform: translateX(4px);
 }
 
 .allocation-head {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    gap: 8px;
-    font-size: 13px;
+    gap: 10px;
+    font-size: 14px;
 }
 
 .allocation-label {
     color: #222;
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .allocation-value {
-    color: #555;
+    color: #495057;
+    font-weight: 600;
     white-space: nowrap;
 }
 
 .allocation-track {
     width: 100%;
-    height: 8px;
+    height: 10px;
     background: #e8edf2;
     border-radius: 999px;
     overflow: hidden;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .allocation-fill {
     height: 100%;
     background: linear-gradient(90deg, #1e88e5, #26a69a);
+    border-radius: 999px;
+    transition: width 0.3s ease;
 }
 
 .allocation-empty {
-    font-size: 13px;
-    color: #8a8a8a;
-    padding: 4px 0;
+    font-size: 14px;
+    color: #9ca3af;
+    padding: 20px;
+    text-align: center;
+    font-style: italic;
 }
 
 @media (max-width: 768px) {
@@ -1294,5 +1434,157 @@ body.readonly .portfolio-table td:nth-last-child(-n+2) {
     .allocation-pie {
         width: 150px;
         height: 150px;
+    }
+}
+
+/* Finance Page Styles */
+.finance-container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.finance-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.finance-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.finance-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    background: #f8f9fa;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.finance-card-header .header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.finance-card-header .card-icon {
+    font-size: 28px;
+    line-height: 1;
+}
+
+.finance-card-header h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #495057;
+}
+
+.finance-card-body {
+    padding: 24px;
+}
+
+/* Allocation Card Specific Styles */
+.allocation-card .finance-card-header {
+    background: linear-gradient(135deg, #f3e8ff 0%, #e0e7ff 100%);
+    border-left: 5px solid #7c3aed;
+}
+
+.allocation-card .finance-card-header h3 {
+    color: #6d28d9;
+}
+
+/* Portfolio Card Specific Styles */
+.portfolio-card .finance-card-header {
+    background: linear-gradient(135deg, #dbeafe 0%, #e0f2fe 100%);
+    border-left: 5px solid #1e88e5;
+}
+
+.portfolio-card .finance-card-header h3 {
+    color: #1565c0;
+}
+
+/* Improved Allocation Pie Chart */
+.allocation-pie {
+    width: 240px;
+    height: 240px;
+    border-radius: 50%;
+    border: 3px solid #e4e4e4;
+    flex: 0 0 auto;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.allocation-panel {
+    background: #ffffff;
+    border: 2px solid #f0f0f0;
+    border-radius: 12px;
+    padding: 16px;
+    transition: border-color 0.2s ease;
+}
+
+.allocation-panel:hover {
+    border-color: #7c3aed;
+}
+
+.allocation-panel h4 {
+    margin: 0 0 14px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #495057;
+}
+
+/* Finance Page Mobile Responsive */
+@media (max-width: 768px) {
+    .finance-container {
+        gap: 16px;
+    }
+
+    .finance-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 16px 20px;
+    }
+
+    .finance-card-header .header-left {
+        width: 100%;
+    }
+
+    .finance-card-header h3 {
+        font-size: 18px;
+    }
+
+    .finance-card-body {
+        padding: 16px 20px;
+    }
+
+    .portfolio-header-right {
+        width: 100%;
+    }
+
+    .allocation-pie {
+        width: 160px;
+        height: 160px;
+    }
+
+    .portfolio-table-wrap {
+        max-height: 400px;
+    }
+
+    .allocation-panel {
+        padding: 12px;
+    }
+
+    .allocation-panel h4 {
+        font-size: 14px;
+    }
+
+    .allocation-summary {
+        font-size: 13px;
+        padding: 10px 12px;
     }
 }
